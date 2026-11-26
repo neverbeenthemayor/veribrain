@@ -1,0 +1,506 @@
+{
+  "schema_version": "1.0",
+  "benchmark": "ai-studio-gemini4-telemetry",
+  "mode": "live",
+  "provenance": "OBSERVED_LIVE_AI_STUDIO",
+  "recorded_at_utc": "2026-11-25T10:40:05Z",
+  "model": "gemini-4-hydrogen",
+  "endpoints": {
+    "count_tokens": "https://generativelanguage.googleapis.com/v1beta/models/gemini-4-hydrogen:countTokens",
+    "interactions": "https://generativelanguage.googleapis.com/v1/interactions",
+    "api_revision_header": "2026-05-20"
+  },
+  "interaction_config": {
+    "corpus_profile": "gemini4-cache",
+    "session_mode": "stateful_previous_interaction_id",
+    "zone_a_placement": "system_instruction",
+    "zone_b_placement": "input",
+    "store": true,
+    "previous_interaction_id_used": true,
+    "max_output_tokens": 512,
+    "thinking_level": "low",
+    "inter_turn_delay_ms": 2000
+  },
+  "budget_gate": {
+    "max_usd": 1,
+    "absolute_hard_cap_usd": 4,
+    "estimated_upper_bound_spend_usd": 0.176537
+  },
+  "count_tokens_calibration": {
+    "payloads": [
+      {
+        "id": "zone_a_small",
+        "label": "Zone A Small (4 DECIDED)",
+        "utf8_bytes": 4241,
+        "chars": 4241,
+        "blocks": 5,
+        "est_tokens": 1414,
+        "actual_tokens": 1114,
+        "actual_over_est_ratio": 0.7878,
+        "utf8_bytes_per_actual_token": 3.807,
+        "est_over_actual_headroom_pct": 26.93
+      },
+      {
+        "id": "zone_a_medium",
+        "label": "Zone A Medium (10 DECIDED)",
+        "utf8_bytes": 10038,
+        "chars": 10038,
+        "blocks": 11,
+        "est_tokens": 3343,
+        "actual_tokens": 2519,
+        "actual_over_est_ratio": 0.7535,
+        "utf8_bytes_per_actual_token": 3.9849,
+        "est_over_actual_headroom_pct": 32.7114
+      },
+      {
+        "id": "zone_a_canonical_large",
+        "label": "Zone A Canonical (18 DECIDED >= 4,096 tok)",
+        "utf8_bytes": 17623,
+        "chars": 17623,
+        "blocks": 19,
+        "est_tokens": 5867,
+        "actual_tokens": 4318,
+        "actual_over_est_ratio": 0.736,
+        "utf8_bytes_per_actual_token": 4.0813,
+        "est_over_actual_headroom_pct": 35.8731
+      },
+      {
+        "id": "zone_a_gemini4_cache_profile",
+        "label": "Zone A Gemini 4 Cache Profile (32 DECIDED, clears 6,146 tail window)",
+        "utf8_bytes": 29982,
+        "chars": 29980,
+        "blocks": 33,
+        "est_tokens": 9984,
+        "actual_tokens": 7112,
+        "actual_over_est_ratio": 0.7123,
+        "utf8_bytes_per_actual_token": 4.2157,
+        "est_over_actual_headroom_pct": 40.3825
+      },
+      {
+        "id": "zone_b_observed_citations",
+        "label": "Zone B Observed Facts + Citations",
+        "utf8_bytes": 3961,
+        "chars": 3961,
+        "blocks": 16,
+        "est_tokens": 1366,
+        "actual_tokens": 1664,
+        "actual_over_est_ratio": 1.2182,
+        "utf8_bytes_per_actual_token": 2.3804,
+        "est_over_actual_headroom_pct": -17.9087
+      },
+      {
+        "id": "zone_b_untrusted_hints_xml",
+        "label": "Zone B <untrusted_hint> XML Blocks",
+        "utf8_bytes": 4374,
+        "chars": 4374,
+        "blocks": 15,
+        "est_tokens": 1498,
+        "actual_tokens": 1269,
+        "actual_over_est_ratio": 0.8471,
+        "utf8_bytes_per_actual_token": 3.4468,
+        "est_over_actual_headroom_pct": 18.0457
+      },
+      {
+        "id": "dense_yaml_frontmatter",
+        "label": "Dense YAML Frontmatter Headers",
+        "utf8_bytes": 3936,
+        "chars": 3936,
+        "blocks": 18,
+        "est_tokens": 1366,
+        "actual_tokens": 2466,
+        "actual_over_est_ratio": 1.8053,
+        "utf8_bytes_per_actual_token": 1.5961,
+        "est_over_actual_headroom_pct": -44.6067
+      },
+      {
+        "id": "dense_json_observed",
+        "label": "Dense JSON Observed Payloads",
+        "utf8_bytes": 6958,
+        "chars": 6958,
+        "blocks": 15,
+        "est_tokens": 2347,
+        "actual_tokens": 3229,
+        "actual_over_est_ratio": 1.3758,
+        "utf8_bytes_per_actual_token": 2.1548,
+        "est_over_actual_headroom_pct": -27.315
+      },
+      {
+        "id": "full_compiled_two_zone",
+        "label": "Full Compiled Two-Zone (Zone A + Boundary + Zone B)",
+        "utf8_bytes": 26000,
+        "chars": 26000,
+        "blocks": 50,
+        "est_tokens": 8743,
+        "actual_tokens": 7204,
+        "actual_over_est_ratio": 0.824,
+        "utf8_bytes_per_actual_token": 3.6091,
+        "est_over_actual_headroom_pct": 21.3631
+      }
+    ],
+    "summary": {
+      "mean_actual_over_est_ratio": 1.0067,
+      "max_actual_over_est_ratio": 1.8053,
+      "min_utf8_bytes_per_actual_token": 1.5961,
+      "mean_utf8_bytes_per_actual_token": 3.2529,
+      "canonical_zone_a_actual_tokens": 4318,
+      "canonical_zone_a_meets_4096_floor": true,
+      "gemini4_cache_zone_a_actual_tokens": 7112,
+      "gemini4_cache_zone_a_clears_6146_window": true,
+      "recommended_chars_per_token": 3.25,
+      "recommended_safety_margin": 2.14
+    }
+  },
+  "prefix_stability": {
+    "arm_a_naive_dynamic_header": {
+      "total_turns": 6,
+      "unique_prefix_hashes": 6,
+      "baseline_prefix_sha256": "b44f5a588e810369ec2c1dcf1e318d7a664de67e23c91728849522aba25202bd",
+      "prefix_identical_turns": 0,
+      "prefix_identical_label": "0/6",
+      "reusable_follow_up_turns": "0/5",
+      "prefix_stability_ratio": 0,
+      "min_first_divergence_byte_offset": 36,
+      "per_turn_prefix_sha256": [
+        {
+          "turn": 1,
+          "obs_delta_id": "OBS-TURN-01",
+          "previous_interaction_id_used": false,
+          "prompt_bytes": 32421,
+          "est_input_tokens": 10821,
+          "prefix_sha256": "b44f5a588e810369ec2c1dcf1e318d7a664de67e23c91728849522aba25202bd",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 2,
+          "obs_delta_id": "OBS-TURN-02",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30590,
+          "est_input_tokens": 11177,
+          "prefix_sha256": "b64e959f677634a1259349faae1072141610e87209fd5d020e3cb904a19aa331",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 3,
+          "obs_delta_id": "OBS-TURN-03",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30585,
+          "est_input_tokens": 11531,
+          "prefix_sha256": "5b07c766c01eb00d18cdf26450d3bd0ccb4bdd11267b63f7c6a2b8b8fbf49a78",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 4,
+          "obs_delta_id": "OBS-TURN-04",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30579,
+          "est_input_tokens": 11883,
+          "prefix_sha256": "2006e13843b7aa9c181ff4375f8e7eefaf8e9520368c54da670f494b61e38cd7",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 5,
+          "obs_delta_id": "OBS-TURN-05",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30585,
+          "est_input_tokens": 12237,
+          "prefix_sha256": "6168a243ffbc91162139d7bd876ef27d707234efae3e8969a8f204b68b192472",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 6,
+          "obs_delta_id": "OBS-TURN-06",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30570,
+          "est_input_tokens": 12586,
+          "prefix_sha256": "f8eb4f7179e5ea6c0a05da6146f05fb50164f63d76d911c339106e0500c23eaf",
+          "matches_turn_1_prefix": false
+        }
+      ]
+    },
+    "arm_b_veribrain_two_zone": {
+      "total_turns": 6,
+      "unique_prefix_hashes": 1,
+      "baseline_prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+      "prefix_identical_turns": 6,
+      "prefix_identical_label": "6/6",
+      "reusable_follow_up_turns": "5/5",
+      "prefix_stability_ratio": 1,
+      "min_first_divergence_byte_offset": 29983,
+      "per_turn_prefix_sha256": [
+        {
+          "turn": 1,
+          "obs_delta_id": "OBS-TURN-01",
+          "previous_interaction_id_used": false,
+          "prompt_bytes": 32249,
+          "est_input_tokens": 10761,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 2,
+          "obs_delta_id": "OBS-TURN-02",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30418,
+          "est_input_tokens": 11117,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 3,
+          "obs_delta_id": "OBS-TURN-03",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30413,
+          "est_input_tokens": 11471,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 4,
+          "obs_delta_id": "OBS-TURN-04",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30407,
+          "est_input_tokens": 11823,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 5,
+          "obs_delta_id": "OBS-TURN-05",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30413,
+          "est_input_tokens": 12177,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 6,
+          "obs_delta_id": "OBS-TURN-06",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30398,
+          "est_input_tokens": 12526,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        }
+      ]
+    }
+  },
+  "live_cache_telemetry": {
+    "all_turns_completed": true,
+    "arm_a_naive_dynamic_header": {
+      "turns": [
+        {
+          "turn": 1,
+          "obs_delta_id": "OBS-TURN-01",
+          "prefix_sha256": "b44f5a588e810369ec2c1dcf1e318d7a664de67e23c91728849522aba25202bd",
+          "est_input_tokens": 10821,
+          "latency_ms": 4135.9,
+          "interaction_id": "v1_ChZxYm9HYThUYk9jU3ExZThQeWZTM01BEhZxYm9HYThUYk9jU3ExZThQeWZTM01B",
+          "previous_interaction_id_used": false,
+          "status": "completed",
+          "total_input_tokens": 7980,
+          "total_cached_tokens": 0,
+          "total_output_tokens": 43,
+          "total_thought_tokens": 215,
+          "total_tokens": 8238,
+          "cached_ratio": 0
+        },
+        {
+          "turn": 2,
+          "obs_delta_id": "OBS-TURN-02",
+          "prefix_sha256": "b64e959f677634a1259349faae1072141610e87209fd5d020e3cb904a19aa331",
+          "est_input_tokens": 11177,
+          "latency_ms": 5642.2,
+          "interaction_id": "v1_ChZxYm9HYThUYk9jU3ExZThQeWZTM01BEhdzTG9HYTVYbkt1V3QxZThQX2RPRG9Rbw",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 8389,
+          "total_cached_tokens": 0,
+          "total_output_tokens": 46,
+          "total_thought_tokens": 143,
+          "total_tokens": 8578,
+          "cached_ratio": 0
+        },
+        {
+          "turn": 3,
+          "obs_delta_id": "OBS-TURN-03",
+          "prefix_sha256": "5b07c766c01eb00d18cdf26450d3bd0ccb4bdd11267b63f7c6a2b8b8fbf49a78",
+          "est_input_tokens": 11531,
+          "latency_ms": 4789.9,
+          "interaction_id": "v1_ChZxYm9HYThUYk9jU3ExZThQeWZTM01BEhd1TG9HYTRPSkZJN0QwLWtQMU1PNDhRWQ",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 8722,
+          "total_cached_tokens": 0,
+          "total_output_tokens": 48,
+          "total_thought_tokens": 171,
+          "total_tokens": 8941,
+          "cached_ratio": 0
+        },
+        {
+          "turn": 4,
+          "obs_delta_id": "OBS-TURN-04",
+          "prefix_sha256": "2006e13843b7aa9c181ff4375f8e7eefaf8e9520368c54da670f494b61e38cd7",
+          "est_input_tokens": 11883,
+          "latency_ms": 5248.3,
+          "interaction_id": "v1_ChZxYm9HYThUYk9jU3ExZThQeWZTM01BEhd2cm9HYThHY09aRzMxZThQd3UyZXdRaw",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 9086,
+          "total_cached_tokens": 0,
+          "total_output_tokens": 59,
+          "total_thought_tokens": 223,
+          "total_tokens": 9368,
+          "cached_ratio": 0
+        },
+        {
+          "turn": 5,
+          "obs_delta_id": "OBS-TURN-05",
+          "prefix_sha256": "6168a243ffbc91162139d7bd876ef27d707234efae3e8969a8f204b68b192472",
+          "est_input_tokens": 12237,
+          "latency_ms": 5952.4,
+          "interaction_id": "v1_ChZxYm9HYThUYk9jU3ExZThQeWZTM01BEhd4cm9HYS11ZEQ5dnMycm9QNXJQVDJRaw",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 9517,
+          "total_cached_tokens": 0,
+          "total_output_tokens": 57,
+          "total_thought_tokens": 200,
+          "total_tokens": 9774,
+          "cached_ratio": 0
+        },
+        {
+          "turn": 6,
+          "obs_delta_id": "OBS-TURN-06",
+          "prefix_sha256": "f8eb4f7179e5ea6c0a05da6146f05fb50164f63d76d911c339106e0500c23eaf",
+          "est_input_tokens": 12586,
+          "latency_ms": 4576.2,
+          "interaction_id": "v1_ChZxYm9HYThUYk9jU3ExZThQeWZTM01BEhd6cm9HYTdqLUQ1RzMxZThQdWUyZXdRaw",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 9913,
+          "total_cached_tokens": 0,
+          "total_output_tokens": 54,
+          "total_thought_tokens": 187,
+          "total_tokens": 10154,
+          "cached_ratio": 0
+        }
+      ],
+      "completed_turns_count": 6,
+      "all_turns_completed": true,
+      "total_input_tokens_all_turns": 53607,
+      "total_cached_tokens_all_turns": 0,
+      "total_thought_tokens_all_turns": 1139,
+      "overall_cached_ratio": 0,
+      "follow_up_turns_cached_ratio": 0,
+      "peak_cached_ratio": 0
+    },
+    "arm_b_veribrain_two_zone": {
+      "turns": [
+        {
+          "turn": 1,
+          "obs_delta_id": "OBS-TURN-01",
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "est_input_tokens": 10761,
+          "latency_ms": 22446.3,
+          "interaction_id": "v1_Chcwcm9HYTdYS0NxT04xZThQeHZ1Q29BYxIXMHJvR2E3WEtDcU9OMWU4UHh2dUNvQWM",
+          "previous_interaction_id_used": false,
+          "status": "completed",
+          "total_input_tokens": 7890,
+          "total_cached_tokens": 0,
+          "total_output_tokens": 40,
+          "total_thought_tokens": 220,
+          "total_tokens": 8150,
+          "cached_ratio": 0
+        },
+        {
+          "turn": 2,
+          "obs_delta_id": "OBS-TURN-02",
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "est_input_tokens": 11117,
+          "latency_ms": 5512.1,
+          "interaction_id": "v1_Chcwcm9HYTdYS0NxT04xZThQeHZ1Q29BYxIXNjdvR2EtanVDdWliMC1rUDZwZVg4UTQ",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 8301,
+          "total_cached_tokens": 5841,
+          "total_output_tokens": 42,
+          "total_thought_tokens": 152,
+          "total_tokens": 8495,
+          "cached_ratio": 0.7037
+        },
+        {
+          "turn": 3,
+          "obs_delta_id": "OBS-TURN-03",
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "est_input_tokens": 11471,
+          "latency_ms": 7132.2,
+          "interaction_id": "v1_Chcwcm9HYTdYS0NxT04xZThQeHZ1Q29BYxIXOHJvR2E1LW5McEhNMnJvUHdJVHh3QWc",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 8639,
+          "total_cached_tokens": 6252,
+          "total_output_tokens": 46,
+          "total_thought_tokens": 161,
+          "total_tokens": 8846,
+          "cached_ratio": 0.7237
+        },
+        {
+          "turn": 4,
+          "obs_delta_id": "OBS-TURN-04",
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "est_input_tokens": 11823,
+          "latency_ms": 5472.1,
+          "interaction_id": "v1_Chcwcm9HYTdYS0NxT04xZThQeHZ1Q29BYxIXX0xvR2E0ZlZCUHpHMC1rUGlacVNpQWc",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 8991,
+          "total_cached_tokens": 6590,
+          "total_output_tokens": 42,
+          "total_thought_tokens": 180,
+          "total_tokens": 9213,
+          "cached_ratio": 0.733
+        },
+        {
+          "turn": 5,
+          "obs_delta_id": "OBS-TURN-05",
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "est_input_tokens": 12177,
+          "latency_ms": 8773.4,
+          "interaction_id": "v1_Chcwcm9HYTdYS0NxT04xZThQeHZ1Q29BYxIXQTdzR2E4eXBHYm0tdnIwUDlPdXdzUTQ",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 9362,
+          "total_cached_tokens": 6942,
+          "total_output_tokens": 59,
+          "total_thought_tokens": 185,
+          "total_tokens": 9606,
+          "cached_ratio": 0.7415
+        },
+        {
+          "turn": 6,
+          "obs_delta_id": "OBS-TURN-06",
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "est_input_tokens": 12526,
+          "latency_ms": 7860.1,
+          "interaction_id": "v1_Chcwcm9HYTdYS0NxT04xZThQeHZ1Q29BYxIXRHJzR2E4cUVDOHVEMnJvUHJLS2w4UUk",
+          "previous_interaction_id_used": true,
+          "status": "completed",
+          "total_input_tokens": 9745,
+          "total_cached_tokens": 7313,
+          "total_output_tokens": 51,
+          "total_thought_tokens": 165,
+          "total_tokens": 9961,
+          "cached_ratio": 0.7504
+        }
+      ],
+      "completed_turns_count": 6,
+      "all_turns_completed": true,
+      "total_input_tokens_all_turns": 52928,
+      "total_cached_tokens_all_turns": 32938,
+      "total_thought_tokens_all_turns": 1063,
+      "overall_cached_ratio": 0.6223,
+      "follow_up_turns_cached_ratio": 0.7313,
+      "peak_cached_ratio": 0.7504
+    }
+  }
+}

@@ -1,0 +1,22 @@
+# Default owner for all files in VeriBrain
+* @neverbeenthemayor
+
+# High-trust provenance, security, compiler, MCP, and CI surfaces
+/.brain/decided/ @neverbeenthemayor
+/.brain/config.json @neverbeenthemayor
+/.brain/scars.md @neverbeenthemayor
+/.github/ @neverbeenthemayor
+/package.json @neverbeenthemayor
+/package-lock.json @neverbeenthemayor
+/SECURITY.md @neverbeenthemayor
+/src/quarantine.ts @neverbeenthemayor
+/src/sanitize.ts @neverbeenthemayor
+/src/schema.ts @neverbeenthemayor
+/src/mirror.ts @neverbeenthemayor
+/src/compiler.ts @neverbeenthemayor
+/src/mcp/ @neverbeenthemayor
+/src/commands/decide.ts @neverbeenthemayor
+/src/commands/promote.ts @neverbeenthemayor
+/src/commands/hooks.ts @neverbeenthemayor
+/src/commands/mcp.ts @neverbeenthemayor
+/src/commands/observe.ts @neverbeenthemayor

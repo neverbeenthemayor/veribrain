@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "veribrain",
+    "prod": "veribrain",
+    "staging": "veribrain-staging"
+  }
+}

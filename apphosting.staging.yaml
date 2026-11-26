@@ -1,0 +1,12 @@
+# Staging App Hosting scale-to-zero caps (veribrain-staging)
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 1
+  concurrency: 40
+
+env:
+  - variable: NEXT_PUBLIC_APP_ENV
+    value: staging
+    availability: [BUILD, RUNTIME]

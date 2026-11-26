@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 500" width="940" height="500" role="img" aria-labelledby="chart3-title chart3-desc">
+  <title id="chart3-title">VeriBrain Prefix Byte-Stability &amp; Gemini 4 Implicit Context Caching Telemetry</title>
+  <desc id="chart3-desc">Left panel shows observed dry-run Zone A prefix stability across 6 multi-turn deltas: Arm A Naive 0/6 vs Arm B VeriBrain Two-Zone 6/6. Right panel shows observed live Gemini 4 total_cached_tokens hit curve.</desc>
+  <rect width="940" height="500" fill="#FFFFFF" />
+  <rect x="16" y="16" width="908" height="468" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" />
+  <text x="40" y="52" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#0F172A">Prefix Byte-Stability (Dry-Run) &amp; Gemini 4 Caching Telemetry</text>
+  <text x="40" y="76" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#334155">Model: gemini-4-hydrogen | Zone A Prefix: 9,984 est. tok (29,982 B &gt;= 4,096 floor) | 6 Multi-Turn Zone B Deltas</text>
+  <rect x="40" y="98" width="415" height="330" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" />
+  <text x="58" y="126" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#0F172A">1. Observed Dry-Run Prefix Identity ($0.00)</text>
+  <text x="58" y="145" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#475569">Byte-identical Zone A prefix across 6 sequential Zone B updates</text>
+  <line x1="94" y1="343.0" x2="431" y2="343.0" stroke="#E2E8F0" stroke-width="1" />
+  <text x="86" y="347.0" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">0%</text>
+  <line x1="94" y1="259.5" x2="431" y2="259.5" stroke="#E2E8F0" stroke-width="1" />
+  <text x="86" y="263.5" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">50%</text>
+  <line x1="94" y1="176.0" x2="431" y2="176.0" stroke="#E2E8F0" stroke-width="1" />
+  <text x="86" y="180.0" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">100%</text>
+  <line x1="94" y1="343" x2="431" y2="343" stroke="#334155" stroke-width="1.5" />
+  <rect x="138" y="339.0" width="92" height="4.0" rx="3" fill="#B91C1C" />
+  <text x="184" y="331.0" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="13" font-weight="700" fill="#B91C1C">0/6 (0%)</text>
+  <text x="184" y="363" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">Arm A: Naive</text>
+  <text x="184" y="379" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">div @ byte 36</text>
+  <rect x="288" y="176.0" width="92" height="167.0" rx="3" fill="#0F766E" />
+  <text x="334" y="168.0" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="13" font-weight="700" fill="#0F766E">6/6 (100%)</text>
+  <text x="334" y="363" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">Arm B: VeriBrain</text>
+  <text x="334" y="379" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">div @ byte 29,983</text>
+  <text x="58" y="412" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">Unique prefix SHA-256 hashes: Arm A = 6/6 | Arm B = 1/6</text>
+  <rect x="475" y="98" width="425" height="330" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" />
+  <text x="493" y="126" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#0F172A">2. Observed Live Gemini 4 Cache Hit Ratio</text>
+  <text x="493" y="145" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="11.5" fill="#475569">usage.total_cached_tokens / usage.total_input_tokens (gemini-4-hydrogen)</text>
+  <line x1="529" y1="343.0" x2="874" y2="343.0" stroke="#E2E8F0" stroke-width="1" />
+  <text x="521" y="347.0" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">0%</text>
+  <line x1="529" y1="301.3" x2="874" y2="301.3" stroke="#E2E8F0" stroke-width="1" />
+  <text x="521" y="305.3" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">25%</text>
+  <line x1="529" y1="259.5" x2="874" y2="259.5" stroke="#E2E8F0" stroke-width="1" />
+  <text x="521" y="263.5" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">50%</text>
+  <line x1="529" y1="217.8" x2="874" y2="217.8" stroke="#E2E8F0" stroke-width="1" />
+  <text x="521" y="221.8" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">75%</text>
+  <line x1="529" y1="176.0" x2="874" y2="176.0" stroke="#E2E8F0" stroke-width="1" />
+  <text x="521" y="180.0" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">100%</text>
+  <polyline fill="none" stroke="#B91C1C" stroke-width="2.5" points="529.0,343.0 598.0,343.0 667.0,343.0 736.0,343.0 805.0,343.0 874.0,343.0" />
+  <polyline fill="none" stroke="#0F766E" stroke-width="2.8" points="529.0,343.0 598.0,225.5 667.0,222.1 736.0,220.6 805.0,219.2 874.0,217.7" />
+  <circle cx="529.0" cy="343.0" r="4" fill="#B91C1C" />
+  <circle cx="529.0" cy="343.0" r="4.5" fill="#0F766E" />
+  <text x="529.0" y="361" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#0F172A">T1</text>
+  <circle cx="598.0" cy="343.0" r="4" fill="#B91C1C" />
+  <circle cx="598.0" cy="225.5" r="4.5" fill="#0F766E" />
+  <text x="598.0" y="361" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#0F172A">T2</text>
+  <circle cx="667.0" cy="343.0" r="4" fill="#B91C1C" />
+  <circle cx="667.0" cy="222.1" r="4.5" fill="#0F766E" />
+  <text x="667.0" y="361" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#0F172A">T3</text>
+  <circle cx="736.0" cy="343.0" r="4" fill="#B91C1C" />
+  <circle cx="736.0" cy="220.6" r="4.5" fill="#0F766E" />
+  <text x="736.0" y="361" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#0F172A">T4</text>
+  <circle cx="805.0" cy="343.0" r="4" fill="#B91C1C" />
+  <circle cx="805.0" cy="219.2" r="4.5" fill="#0F766E" />
+  <text x="805.0" y="361" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#0F172A">T5</text>
+  <circle cx="874.0" cy="343.0" r="4" fill="#B91C1C" />
+  <circle cx="874.0" cy="217.7" r="4.5" fill="#0F766E" />
+  <text x="874.0" y="361" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#0F172A">T6</text>
+  <text x="493" y="392" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">T2-T6 Cached: Arm B = 73.1% vs Arm A = 0.0%</text>
+  <text x="493" y="412" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">Source: ai-studio-live.json | Upper bound: $0.1765</text>
+  <line x1="40" y1="448" x2="900" y2="448" stroke="#E2E8F0" stroke-width="1" />
+  <text x="40" y="468" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">Source: benchmarks/results/ai-studio-dryrun.json + ai-studio-live.json | Zone A SHA-256: f0cf3d0505c7ff960b36ec80...</text>
+</svg>

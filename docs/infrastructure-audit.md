@@ -1,0 +1,23 @@
+# VeriBrain — Active Infrastructure & Post-Deploy Audit Log
+
+- **Owner:** Chief Infrastructure Engineer (CIE) · **Release Target:** `v1.1.0` (`PRG-1` · `2026-11-26`)
+- **Repository:** `https://github.com/neverbeenthemayor/veribrain` (Private · `main`, `staging`, `pre-staging`)
+- **Architecture Mode:** Local-First Node.js 24 LTS CLI + Local `stdio` MCP (NO Firebase Hosting / Cloud Run / Vector DB deploys)
+
+| Check / Target | Status | Date / Gate | Evidence / Notes |
+|---|---|---|---|
+| **Private GitHub Repo & 3-Tier Branches** | `PASS` | `2026-11-26` | `neverbeenthemayor/veribrain` (`main`, `staging`, `pre-staging`) |
+| **Google Drive Read-Only Doc Mirror** | `PASS` | `2026-11-26` | Private external doc mirror (zero `.git` inside mirror) |
+| **3-Job SHA-Pinned CI (`.github/workflows/ci.yml`)** | `PASS` | `PRG-1` (`v1.1.0`) | `8,013 B` pure LF / `0` tabs (untouched from `v1.0.0`); `NODE_VERSION: '24'`, `paths-ignore` (`docs/**`, `*.md` — covers `.brain/**/*.md`), `npm run build` before `npm test` (runs new `tests/unit/prg1-governance.test.ts`), `Verify Red-Team Wind Tunnel & Linux Symlink Confinement (RT-PRV-18)`, post-build LF shebang + `--help` + conditional `.brain` `eval --strict` + `npm pack --dry-run`; `timeout-minutes: 5` intact; `hooks install --print-ci` aligns on `pre-staging`/`staging`/`main` + Node 24 + `eval --strict` + `observe --issuer ci` |
+| **PRG-1 `v1.1.0` Packaging & Tarball (`PM-501–504`)** | `PASS` | `PRG-1` (`v1.1.0`) | `package.json` & `package-lock.json` (`v3`) synced at `veribrain@1.1.0` (`engines: >=24.0.0`, `files: ["dist","README.md","LICENSE","CHANGELOG.md"]`); post-remediation `npm pack --dry-run --ignore-scripts` -> `veribrain-1.1.0.tgz` (`42` files, `79.3 kB` packed / `385.7 kB` unpacked: `38` `dist/**` files incl. `decide`, `hooks`, `lint-text`, `promote`, `mirror` + `README.md`, `LICENSE`, `CHANGELOG.md`, `package.json` ONLY — zero `.brain/`, `tests/`, `benchmarks/`, `docs/`, `.github/`, secrets, or Firebase leakage) |
+| **PRG-1 `v1.1.0` Supply Chain & Node 24 LTS Parity** | `PASS*` | `PRG-1` (`v1.1.0`) | Runtime `dependencies` strictly `2` (`@modelcontextprotocol/sdk@1.32.2`, `zod@4.6.7`, `95` prod lockfile entries — byte-identical to `v1.0.0` live `0`-vuln audit; `0` LLM/cloud/DB/telemetry deps, `0` Node 24 engine conflicts); `@types/node@24.19.4` & devDeps unchanged; sandboxed `npm audit --omit=dev` exited `1` (`403 Forbidden` sandbox egress block on npm bulk advisories — flagged for CPM unsandboxed confirmation) |
+| **CLI Shebang & Binary Smoke (`dist/cli.js`)** | `PASS` | `PRG-1` (`v1.1.0`) | Exact pure LF shebang `#!/usr/bin/env node\n` (`0` CR bytes); `dist/` fresh (`38` files >= `19` `src/` mtimes); `node ./dist/cli.js --version` -> `veribrain 1.1.0`; `--help` & `hooks install --print-ci` exit `0`; `src/mcp/server.ts` imports `server/stdio.js` only; `README.md`, `LICENSE`, `CHANGELOG.md`, `package.json` pure LF |
+| **Gates 1–4 (`v1.0.0`) Baseline Archive** | `PASS` | `2026-11-25` | Gate 1 (`0` runtime deps, `27` tarball files); Gate 2 (`PM-205`: `14/14` benchmark files LF, excluded); Gate 3 (`PM-305`: `stdio` MCP deps pinned, `31` files); Gate 4 (`v1.0.0`: `@types/node@24.19.4`, `32` files / `50.8 kB`, live `npm audit` `0` vulns, Linux `RT-PRV-18` CI gate) |
+| **Zero Cloud Infra Provisioned** | `PASS` | `2026-11-26` | Confirmed local-only CLI + local `stdio` MCP + local Wind Tunnel runners; zero Firebase/Cloud Run/Firestore/Vector DB deployments |
+| **Scale-to-Zero Guardrail (`apphosting*.yaml`)** | `PASS` | `2026-11-26` | `minInstances: 0`, `cpu: 1`, `memoryMiB: 512`, `maxInstances: 3/1` intact (`0` diff) for Playbook `v2.0` `--verify` compliance |
+| **Active Register Token-Diet (`< 8,192 B`)** | `PASS` | `2026-11-26` | All 7 active registers verified `< 8,192 B` & pure LF (`docs/progress-reports.md` `5,540 B` largest; `infrastructure-audit.md` `~4.4 KB`) |
+| **Pragmatic SRE 5-Point Skill** | `PASS` | `2026-11-26` | Wired at `.agents/skills/pragmatic-sre/SKILL.md`; Biome `noEmptyBlockStatements: error` enforces Rule #2 |
+| **External Workspace Isolation Proof** | `PASS` | `2026-11-26` | Zero writes to external workspaces configured via `VERIBRAIN_ISOLATION_SEGMENTS` or external mirrors |
+
+### Non-Blocking Advisories (Tracked for `PRG-2`)
+- `hooks install --print-ci` (`VERIBRAIN_CI_SNIPPET`) now enforces `permissions: contents: read`, `concurrency`, `timeout-minutes: 5`, `env:`-safe GitHub context interpolation, and `npx --no-install` (remediated in `v1.1.0`). Remaining minor `PRG-2` polish: optionally pin `actions/checkout` & `actions/setup-node` to commit SHAs in the generated template to mirror VeriBrain's own `.github/workflows/ci.yml`.

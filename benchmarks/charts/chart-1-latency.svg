@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 500" width="920" height="500" role="img" aria-labelledby="chart1-title chart1-desc">
+  <title id="chart1-title">VeriBrain Local Compile Latency: Warm vs. Cold Disk</title>
+  <desc id="chart1-desc">Observed 100-run sequential compile latency comparing warm stat-validated cache (p95 12.622 ms) and cold disk reads (p95 99.484 ms) against the 15 ms p95 gate.</desc>
+  <rect width="920" height="500" fill="#FFFFFF" />
+  <rect x="16" y="16" width="888" height="468" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" />
+  <text x="40" y="52" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#0F172A">Local Compile Latency: Warm Stat-Validated vs. Cold Disk</text>
+  <text x="40" y="76" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12.5" fill="#334155">Observed $0.00 (100 timed + 10 warmup runs) | Corpus: 45 files (35,365 B) | Zone A: 5,867 est. tok | SHA-256 Identity: 100/100</text>
+  <!-- Legend -->
+  <rect x="40" y="92" width="14" height="14" rx="2" fill="#0F766E" />
+  <text x="60" y="104" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#0F172A">Warm Stat-Validated (bypassReadCache: false)</text>
+  <rect x="365" y="92" width="14" height="14" rx="2" fill="#B45309" />
+  <text x="385" y="104" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#0F172A">Cold Disk Reads (bypassReadCache: true)</text>
+  <line x1="650" y1="99" x2="682" y2="99" stroke="#1D4ED8" stroke-width="2.5" stroke-dasharray="6,4" />
+  <text x="690" y="104" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#1D4ED8">Gate Target: p95 &lt; 15.0 ms</text>
+  <line x1="95" y1="388.0" x2="875" y2="388.0" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="392.0" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">0 ms</text>
+  <line x1="95" y1="350.9" x2="875" y2="350.9" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="354.9" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">20 ms</text>
+  <line x1="95" y1="313.7" x2="875" y2="313.7" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="317.7" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">40 ms</text>
+  <line x1="95" y1="276.6" x2="875" y2="276.6" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="280.6" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">60 ms</text>
+  <line x1="95" y1="239.4" x2="875" y2="239.4" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="243.4" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">80 ms</text>
+  <line x1="95" y1="202.3" x2="875" y2="202.3" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="206.3" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">100 ms</text>
+  <line x1="95" y1="165.1" x2="875" y2="165.1" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="169.1" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">120 ms</text>
+  <line x1="95" y1="128.0" x2="875" y2="128.0" stroke="#E2E8F0" stroke-width="1" />
+  <text x="83" y="132.0" text-anchor="end" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" fill="#475569">140 ms</text>
+  <line x1="95" y1="128" x2="95" y2="388" stroke="#334155" stroke-width="1.5" />
+  <line x1="95" y1="388" x2="875" y2="388" stroke="#334155" stroke-width="1.5" />
+  <rect x="144.0" y="372.2" width="72" height="15.8" rx="3" fill="#0F766E" />
+  <text x="180.0" y="364.2" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="12" font-weight="700" fill="#0F766E">8.48 ms</text>
+  <rect x="234.0" y="290.2" width="72" height="97.8" rx="3" fill="#B45309" />
+  <text x="270.0" y="282.2" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="12" font-weight="700" fill="#B45309">52.65 ms</text>
+  <text x="225.0" y="412" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="13.5" font-weight="600" fill="#0F172A">p50 (Median)</text>
+  <rect x="404.0" y="364.6" width="72" height="23.4" rx="3" fill="#0F766E" />
+  <text x="440.0" y="356.6" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="12" font-weight="700" fill="#0F766E">12.62 ms</text>
+  <rect x="494.0" y="203.2" width="72" height="184.8" rx="3" fill="#B45309" />
+  <text x="530.0" y="195.2" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="12" font-weight="700" fill="#B45309">99.48 ms</text>
+  <text x="485.0" y="412" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="13.5" font-weight="600" fill="#0F172A">p95 (Gate Metric)</text>
+  <rect x="664.0" y="357.7" width="72" height="30.3" rx="3" fill="#0F766E" />
+  <text x="700.0" y="349.7" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="12" font-weight="700" fill="#0F766E">16.29 ms</text>
+  <rect x="754.0" y="144.1" width="72" height="243.9" rx="3" fill="#B45309" />
+  <text x="790.0" y="136.1" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="12" font-weight="700" fill="#B45309">131.31 ms</text>
+  <text x="745.0" y="412" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="13.5" font-weight="600" fill="#0F172A">p99 (Tail)</text>
+  <line x1="95" y1="360.1" x2="875" y2="360.1" stroke="#1D4ED8" stroke-width="2.2" stroke-dasharray="7,4" />
+  <rect x="338" y="314.0" width="144" height="20" rx="4" fill="#EFF6FF" stroke="#1D4ED8" stroke-width="1" />
+  <text x="410" y="328.0" text-anchor="middle" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">15.0 ms p95 Gate</text>
+  <line x1="40" y1="436" x2="880" y2="436" stroke="#E2E8F0" stroke-width="1" />
+  <text x="40" y="456" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#0F172A">Observed Gate Status: Warm p95 = 12.62 ms [PASS] | Cold Disk p95 = 99.48 ms [EXCEEDS (NTFS cold I/O)]</text>
+  <text x="40" y="474" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">Source: results/latency-observed.json | Node v26.13.1 (win32/x64) | mean warm=8.86 ms (sd=2.04), cold=57.67 ms (sd=23.27)</text>
+</svg>

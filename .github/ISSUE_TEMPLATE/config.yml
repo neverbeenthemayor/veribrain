@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a Security Vulnerability (Private)
+    url: https://github.com/neverbeenthemayor/veribrain/security/advisories/new
+    about: Privately report quarantine bypasses, prompt-injection escapes, provenance flaws, or path-traversal issues instead of opening a public issue.

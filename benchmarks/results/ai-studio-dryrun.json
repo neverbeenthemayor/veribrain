@@ -1,0 +1,293 @@
+{
+  "schema_version": "1.0",
+  "benchmark": "ai-studio-gemini4-telemetry",
+  "mode": "dry-run",
+  "provenance": "OBSERVED_LOCAL_DRY_RUN",
+  "live_api_status": "PENDING_OWNER_RUN",
+  "live_run_command": "./scripts/run_with_key.ps1 GEMINI_API_KEY node benchmarks/ai_studio_telemetry.mjs --live --model gemini-4-hydrogen",
+  "recorded_at_utc": "2026-11-25T10:37:01Z",
+  "model": "gemini-4-hydrogen",
+  "allowed_models": [
+    "gemini-4-hydrogen",
+    "gemini-3.5-flash-lite",
+    "gemini-4-argon",
+    "gemini-4-neon",
+    "gemini-4-carbon"
+  ],
+  "endpoints": {
+    "count_tokens": "https://generativelanguage.googleapis.com/v1beta/models/gemini-4-hydrogen:countTokens",
+    "interactions": "https://generativelanguage.googleapis.com/v1/interactions",
+    "api_revision_header": "2026-05-20"
+  },
+  "interaction_config": {
+    "corpus_profile": "gemini4-cache",
+    "session_mode": "stateful_previous_interaction_id",
+    "zone_a_placement": "system_instruction",
+    "zone_b_placement": "input",
+    "store": true,
+    "previous_interaction_id_used": true,
+    "max_output_tokens": 512,
+    "thinking_level": "low",
+    "inter_turn_delay_ms": 2000
+  },
+  "budget_gate": {
+    "max_usd": 1,
+    "absolute_hard_cap_usd": 4,
+    "actual_spend_usd": 0,
+    "count_tokens_calls": 9,
+    "count_tokens_cost_usd": 0,
+    "interaction_calls": 12,
+    "total_requests": 21,
+    "total_est_input_tokens": 140110,
+    "total_max_output_tokens": 6144,
+    "pricing_ceiling_assumed": {
+      "maxInputUsdPer1M": 1.5,
+      "maxOutputUsdPer1M": 6
+    },
+    "worst_case_input_usd": 0.210165,
+    "worst_case_output_usd": 0.036864,
+    "worst_case_total_usd": 0.247029,
+    "within_budget": true
+  },
+  "corpus_zone_a": {
+    "profile": "gemini4-cache",
+    "decided_count": 32,
+    "zone_a_bytes": 29982,
+    "zone_a_tokens_est": 9984,
+    "expected_actual_tokens_at_4_08_bpt": 7346,
+    "zone_a_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+    "mean_zone_a_byte_share_pct": 97.6561,
+    "meets_gemini4_4096_floor": true,
+    "clears_6146_tail_window_est": true,
+    "canonical_zone_a_bytes": 17623,
+    "canonical_zone_a_tokens_est": 5867,
+    "canonical_zone_a_sha256": "000f300d49b5afc0488dbaf24eefaeb71713dc4fdeaa3d0033ec833631246741"
+  },
+  "count_tokens_calibration_plan": [
+    {
+      "id": "zone_a_small",
+      "label": "Zone A Small (4 DECIDED)",
+      "utf8_bytes": 4241,
+      "chars": 4241,
+      "blocks": 5,
+      "est_tokens": 1414,
+      "sha256": "998abe5975e3aba69251ccc10e3c368a52dc6b1788aa32ab1dd9e132dd2deb05",
+      "actual_tokens": null
+    },
+    {
+      "id": "zone_a_medium",
+      "label": "Zone A Medium (10 DECIDED)",
+      "utf8_bytes": 10038,
+      "chars": 10038,
+      "blocks": 11,
+      "est_tokens": 3343,
+      "sha256": "d112f8746ed46780ccc998d1f36024bc32639d12b82e4af526ed4590c0cb469e",
+      "actual_tokens": null
+    },
+    {
+      "id": "zone_a_canonical_large",
+      "label": "Zone A Canonical (18 DECIDED >= 4,096 tok)",
+      "utf8_bytes": 17623,
+      "chars": 17623,
+      "blocks": 19,
+      "est_tokens": 5867,
+      "sha256": "000f300d49b5afc0488dbaf24eefaeb71713dc4fdeaa3d0033ec833631246741",
+      "actual_tokens": null
+    },
+    {
+      "id": "zone_a_gemini4_cache_profile",
+      "label": "Zone A Gemini 4 Cache Profile (32 DECIDED, clears 6,146 tail window)",
+      "utf8_bytes": 29982,
+      "chars": 29980,
+      "blocks": 33,
+      "est_tokens": 9984,
+      "sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+      "actual_tokens": null
+    },
+    {
+      "id": "zone_b_observed_citations",
+      "label": "Zone B Observed Facts + Citations",
+      "utf8_bytes": 3961,
+      "chars": 3961,
+      "blocks": 16,
+      "est_tokens": 1366,
+      "sha256": "86d6e75a33761937ebaa99a54490cf46ce16e628b7a7de01d3557c970e7f9aed",
+      "actual_tokens": null
+    },
+    {
+      "id": "zone_b_untrusted_hints_xml",
+      "label": "Zone B <untrusted_hint> XML Blocks",
+      "utf8_bytes": 4374,
+      "chars": 4374,
+      "blocks": 15,
+      "est_tokens": 1498,
+      "sha256": "d7445c4cda4927a4956b3c318a0a64d7e435a0b7637a33ad3ddda96f9f2576af",
+      "actual_tokens": null
+    },
+    {
+      "id": "dense_yaml_frontmatter",
+      "label": "Dense YAML Frontmatter Headers",
+      "utf8_bytes": 3936,
+      "chars": 3936,
+      "blocks": 18,
+      "est_tokens": 1366,
+      "sha256": "4cc5efbbd1682a631b3d65d14156a07fc0388357dec2f270615c5df2ab1afd79",
+      "actual_tokens": null
+    },
+    {
+      "id": "dense_json_observed",
+      "label": "Dense JSON Observed Payloads",
+      "utf8_bytes": 6958,
+      "chars": 6958,
+      "blocks": 15,
+      "est_tokens": 2347,
+      "sha256": "a9129314af9bef463c6b33f91b8397c1367b053f861e163224d49c5ca6c2a9dd",
+      "actual_tokens": null
+    },
+    {
+      "id": "full_compiled_two_zone",
+      "label": "Full Compiled Two-Zone (Zone A + Boundary + Zone B)",
+      "utf8_bytes": 26000,
+      "chars": 26000,
+      "blocks": 50,
+      "est_tokens": 8743,
+      "sha256": "fd46ad9236a6451c6ad621089c03cb1b6a0b005f28ffaa25937cff979e7f79c2",
+      "actual_tokens": null
+    }
+  ],
+  "prefix_stability": {
+    "arm_a_naive_dynamic_header": {
+      "total_turns": 6,
+      "unique_prefix_hashes": 6,
+      "baseline_prefix_sha256": "b44f5a588e810369ec2c1dcf1e318d7a664de67e23c91728849522aba25202bd",
+      "prefix_identical_turns": 0,
+      "prefix_identical_label": "0/6",
+      "reusable_follow_up_turns": "0/5",
+      "prefix_stability_ratio": 0,
+      "min_first_divergence_byte_offset": 36,
+      "per_turn_prefix_sha256": [
+        {
+          "turn": 1,
+          "obs_delta_id": "OBS-TURN-01",
+          "previous_interaction_id_used": false,
+          "prompt_bytes": 32421,
+          "est_input_tokens": 10821,
+          "prefix_sha256": "b44f5a588e810369ec2c1dcf1e318d7a664de67e23c91728849522aba25202bd",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 2,
+          "obs_delta_id": "OBS-TURN-02",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30590,
+          "est_input_tokens": 11177,
+          "prefix_sha256": "b64e959f677634a1259349faae1072141610e87209fd5d020e3cb904a19aa331",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 3,
+          "obs_delta_id": "OBS-TURN-03",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30585,
+          "est_input_tokens": 11531,
+          "prefix_sha256": "5b07c766c01eb00d18cdf26450d3bd0ccb4bdd11267b63f7c6a2b8b8fbf49a78",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 4,
+          "obs_delta_id": "OBS-TURN-04",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30579,
+          "est_input_tokens": 11883,
+          "prefix_sha256": "2006e13843b7aa9c181ff4375f8e7eefaf8e9520368c54da670f494b61e38cd7",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 5,
+          "obs_delta_id": "OBS-TURN-05",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30585,
+          "est_input_tokens": 12237,
+          "prefix_sha256": "6168a243ffbc91162139d7bd876ef27d707234efae3e8969a8f204b68b192472",
+          "matches_turn_1_prefix": false
+        },
+        {
+          "turn": 6,
+          "obs_delta_id": "OBS-TURN-06",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30570,
+          "est_input_tokens": 12586,
+          "prefix_sha256": "f8eb4f7179e5ea6c0a05da6146f05fb50164f63d76d911c339106e0500c23eaf",
+          "matches_turn_1_prefix": false
+        }
+      ]
+    },
+    "arm_b_veribrain_two_zone": {
+      "total_turns": 6,
+      "unique_prefix_hashes": 1,
+      "baseline_prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+      "prefix_identical_turns": 6,
+      "prefix_identical_label": "6/6",
+      "reusable_follow_up_turns": "5/5",
+      "prefix_stability_ratio": 1,
+      "min_first_divergence_byte_offset": 29983,
+      "per_turn_prefix_sha256": [
+        {
+          "turn": 1,
+          "obs_delta_id": "OBS-TURN-01",
+          "previous_interaction_id_used": false,
+          "prompt_bytes": 32249,
+          "est_input_tokens": 10761,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 2,
+          "obs_delta_id": "OBS-TURN-02",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30418,
+          "est_input_tokens": 11117,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 3,
+          "obs_delta_id": "OBS-TURN-03",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30413,
+          "est_input_tokens": 11471,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 4,
+          "obs_delta_id": "OBS-TURN-04",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30407,
+          "est_input_tokens": 11823,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 5,
+          "obs_delta_id": "OBS-TURN-05",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30413,
+          "est_input_tokens": 12177,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        },
+        {
+          "turn": 6,
+          "obs_delta_id": "OBS-TURN-06",
+          "previous_interaction_id_used": true,
+          "prompt_bytes": 30398,
+          "est_input_tokens": 12526,
+          "prefix_sha256": "f0cf3d0505c7ff960b36ec80d9d43027a3ae6f2d9b752f818d46685cc8d944f1",
+          "matches_turn_1_prefix": true
+        }
+      ]
+    }
+  },
+  "live_cache_telemetry": null
+}

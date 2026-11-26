@@ -1,0 +1,42 @@
+# Fail-closed secret, dependency & build hygiene (Security & CFOE)
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+.firebase/
+.vercel/
+
+# VeriBrain compiled ephemeral artifacts (rebuilt deterministically)
+.brain/compiled/
+
+# Secrets & credentials — NEVER commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*service-account*.json
+*serviceAccount*.json
+*credentials*.json
+firebase-adminsdk-*.json
+token.json
+client_secret*.json
+
+# Large binary media & debug logs
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.log
+npm-debug.log*
+firebase-debug*.log
+firestore-debug*.log
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc

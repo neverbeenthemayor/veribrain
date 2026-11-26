@@ -1,0 +1,65 @@
+{
+  "name": "veribrain",
+  "version": "1.1.0",
+  "description": "Zero-dollar deterministic, provenance-verified context compiler and local stdio MCP shared brain for multi-agent engineering",
+  "license": "MIT",
+  "author": "Ian Mayor",
+  "type": "module",
+  "keywords": [
+    "mcp",
+    "context-compiler",
+    "ai-agents",
+    "kv-cache",
+    "provenance",
+    "gemini",
+    "claude-code",
+    "cursor",
+    "codex"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neverbeenthemayor/veribrain.git"
+  },
+  "homepage": "https://github.com/neverbeenthemayor/veribrain#readme",
+  "bugs": {
+    "url": "https://github.com/neverbeenthemayor/veribrain/issues"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "veribrain": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "node -e \"import('node:fs').then((fs) => fs.rmSync('dist', { recursive: true, force: true }))\" && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tests",
+    "test": "vitest run --no-file-parallelism",
+    "test:watch": "vitest",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.9",
+    "@types/node": "24.19.4",
+    "typescript": "7.0.2",
+    "vitest": "5.1.1"
+  }
+}

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 530" width="940" height="530" role="img" aria-labelledby="chart2-title chart2-desc">
+  <title id="chart2-title">VeriBrain Adversarial Red-Team Wind Tunnel Scorecard</title>
+  <desc id="chart2-desc">Observed results across 129 deterministic adversarial and control test cases across 7 security families: 129 passed, 0 failed, 0 policy poisoning escapes, 0 secret canary leaks.</desc>
+  <rect width="940" height="530" fill="#FFFFFF" />
+  <rect x="16" y="16" width="908" height="498" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" />
+  <text x="40" y="52" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#0F172A">Adversarial Red-Team Wind Tunnel Scorecard (129 Cases)</text>
+  <text x="40" y="76" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#334155">Observed $0.00 local execution against compiled dist/cli.js + dist/index.js (125 adversarial attacks + 4 clean negative controls)</text>
+  <rect x="40" y="90" width="420" height="28" rx="6" fill="#CCFBF1" stroke="#0F766E" stroke-width="1" />
+  <text x="54" y="109" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="12.5" font-weight="700" fill="#0F766E">129/129 PASSED | 0% ESCAPE | 0 CANARY LEAKS</text>
+  <!-- Legend -->
+  <rect x="575" y="97" width="14" height="14" rx="2" fill="#0F766E" />
+  <text x="595" y="109" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#0F172A">Defended / Passed</text>
+  <rect x="730" y="97" width="14" height="14" rx="2" fill="#B91C1C" />
+  <text x="750" y="109" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#0F172A">Real Catch / Failed</text>
+  <line x1="305.0" y1="134" x2="305.0" y2="432" stroke="#E2E8F0" stroke-width="1" />
+  <text x="305.0" y="448" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">0</text>
+  <line x1="403.0" y1="134" x2="403.0" y2="432" stroke="#E2E8F0" stroke-width="1" />
+  <text x="403.0" y="448" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">5</text>
+  <line x1="501.0" y1="134" x2="501.0" y2="432" stroke="#E2E8F0" stroke-width="1" />
+  <text x="501.0" y="448" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">10</text>
+  <line x1="599.0" y1="134" x2="599.0" y2="432" stroke="#E2E8F0" stroke-width="1" />
+  <text x="599.0" y="448" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">15</text>
+  <line x1="697.0" y1="134" x2="697.0" y2="432" stroke="#E2E8F0" stroke-width="1" />
+  <text x="697.0" y="448" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">20</text>
+  <line x1="795.0" y1="134" x2="795.0" y2="432" stroke="#E2E8F0" stroke-width="1" />
+  <text x="795.0" y="448" text-anchor="middle" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11" fill="#475569">25</text>
+  <text x="291" y="164" text-anchor="end" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">Direct Secrets (GCP/JWT/PEM/OAuth)</text>
+  <rect x="305" y="148" width="450.8" height="24" rx="3" fill="#0F766E" />
+  <text x="765.8" y="164" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" font-weight="700" fill="#0F766E">23/23 (100%)</text>
+  <text x="291" y="206" text-anchor="end" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">Quarantine Evasion &amp; Reassembly</text>
+  <rect x="305" y="190" width="431.2" height="24" rx="3" fill="#0F766E" />
+  <text x="746.2" y="206" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" font-weight="700" fill="#0F766E">22/22 (100%)</text>
+  <text x="291" y="248" text-anchor="end" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">High-Entropy &amp; Allowlist Abuse</text>
+  <rect x="305" y="232" width="313.6" height="24" rx="3" fill="#0F766E" />
+  <text x="628.6" y="248" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" font-weight="700" fill="#0F766E">16/16 (100%)</text>
+  <text x="291" y="290" text-anchor="end" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">PII &amp; Whitelist Boundary (+Controls)</text>
+  <rect x="305" y="274" width="254.8" height="24" rx="3" fill="#0F766E" />
+  <text x="569.8" y="290" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" font-weight="700" fill="#0F766E">13/13 (100%)</text>
+  <text x="291" y="332" text-anchor="end" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">Prompt Injection &amp; Hint Containment</text>
+  <rect x="305" y="316" width="411.6" height="24" rx="3" fill="#0F766E" />
+  <text x="726.6" y="332" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" font-weight="700" fill="#0F766E">21/21 (100%)</text>
+  <text x="291" y="374" text-anchor="end" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">Provenance, Auth &amp; FS Confinement</text>
+  <rect x="305" y="358" width="470.4" height="24" rx="3" fill="#0F766E" />
+  <text x="785.4" y="374" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" font-weight="700" fill="#0F766E">24/24 (100%)</text>
+  <text x="291" y="416" text-anchor="end" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" fill="#0F172A">Budget Exhaustion &amp; Diff Bounds</text>
+  <rect x="305" y="400" width="196.0" height="24" rx="3" fill="#0F766E" />
+  <text x="511.0" y="416" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="11.5" font-weight="700" fill="#0F766E">10/10 (100%)</text>
+  <line x1="40" y1="464" x2="900" y2="464" stroke="#E2E8F0" stroke-width="1" />
+  <text x="40" y="484" font-family="'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#0F766E">Pre-patch 124/129 caught 3 real src/ bugs -&gt; patched -&gt; 129/129 post-patch (0% escape, 0 canary leaks).</text>
+  <text x="40" y="502" font-family="'Cascadia Code', Consolas, 'SFMono-Regular', Menlo, monospace" font-size="10.5" fill="#475569">Source: results/redteam-observed.json | Corpus: redteam_corpus.json | Node v26.13.1 (win32)</text>
+</svg>

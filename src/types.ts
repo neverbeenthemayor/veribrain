@@ -1,0 +1,418 @@
+export const EXIT_OK = 0;
+export const EXIT_ERROR = 1;
+export const EXIT_QUARANTINE_VIOLATION = 2;
+export const EXIT_BUDGET_INFEASIBLE = 3;
+export const EXIT_PROVENANCE_VIOLATION = 4;
+export const EXIT_PROVENANCE = EXIT_PROVENANCE_VIOLATION;
+
+export type ExitCode =
+  | typeof EXIT_OK
+  | typeof EXIT_ERROR
+  | typeof EXIT_QUARANTINE_VIOLATION
+  | typeof EXIT_BUDGET_INFEASIBLE
+  | typeof EXIT_PROVENANCE_VIOLATION;
+
+export const SCHEMA_VERSION = "1.0" as const;
+export const ESTIMATOR_VERSION = "utf8-3.5x1.15-v1" as const;
+export const ZONE_BOUNDARY_MARKER = "<!-- VERIBRAIN:ZONE_BOUNDARY:A_END -->" as const;
+
+export const DEFAULT_CHARS_PER_TOKEN = 3.5;
+export const DEFAULT_SAFETY_MARGIN = 1.15;
+export const DEFAULT_MAX_TOKENS = 8192;
+export const MAX_SCARS_BYTES = 4096;
+export const MAX_SCAR_TTL_SECONDS = 30 * 24 * 60 * 60;
+export const MAX_HYPOTHESIS_TTL_SECONDS = 7 * 24 * 60 * 60;
+export const MAX_OBSERVED_TTL_SECONDS = 2_592_000;
+export const KV_CACHE_MIN_FLOOR_TOKENS = 1024;
+
+export const VALID_PRIORITIES = ["P0", "P1", "P2"] as const;
+export type Priority = (typeof VALID_PRIORITIES)[number];
+
+export const VALID_ENVS = ["local", "pre-staging", "staging", "prod"] as const;
+export type EnvName = (typeof VALID_ENVS)[number];
+
+export const VALID_ISSUERS = ["ci", "git-hook", "verifier-script"] as const;
+export type Issuer = (typeof VALID_ISSUERS)[number];
+
+export const VALID_DECIDED_STATUSES = ["active", "superseded"] as const;
+export type DecidedStatus = (typeof VALID_DECIDED_STATUSES)[number];
+
+export type HintSource = "scar" | "hypothesis";
+
+export type QuarantineRuleId =
+  | "gcp_api_key"
+  | "jwt"
+  | "bearer"
+  | "pem_private"
+  | "provider_token"
+  | "oauth_kv"
+  | "pii_email"
+  | "pii_phone"
+  | "high_entropy_secret";
+
+export interface QuarantineConfig {
+  allowed_emails: string[];
+  allowed_domains: string[];
+  allowed_phones: string[];
+}
+
+export interface BrainConfig {
+  schema_version: typeof SCHEMA_VERSION;
+  estimator_version: string;
+  chars_per_token: number;
+  safety_margin: number;
+  default_max_tokens: number;
+  pinned_ids: string[];
+  quarantine: QuarantineConfig;
+  semantic_keys?: Record<string, string | number | boolean>;
+  mirror_dirs?: string[];
+}
+
+export interface DecidedRecord {
+  id: string;
+  priority: Priority;
+  roles: string[];
+  signed_by: string;
+  signed_at_utc: string;
+  sha256_body: string;
+  status: DecidedStatus;
+  body: string;
+  envs?: string[];
+  title?: string;
+  supersedes?: string;
+  source_file: string;
+}
+
+export interface ObservedRecord {
+  claim_id: string;
+  env: EnvName;
+  git_sha: string;
+  observed_at_utc: string;
+  ttl_seconds: number;
+  issuer: Issuer;
+  roles: string[];
+  summary: string;
+  evidence_ref: string;
+  priority: Priority;
+  source_file: string;
+}
+
+export interface HypothesisRecord {
+  id: string;
+  created_at_utc: string;
+  expires_at_utc: string;
+  roles: string[];
+  proposed_by: string;
+  hint: string;
+  kind?: "hypothesis" | "scar_proposal" | "hypothesis_scar";
+  regression_test?: string;
+  proposed_ttl_days?: number;
+  source_file: string;
+}
+
+export interface ScarRecord {
+  scar_id: string;
+  created_at_utc: string;
+  expires_at_utc: string;
+  regression_test: string;
+  hint: string;
+  roles: string[];
+  line_number: number;
+}
+
+export interface LoadedBrain {
+  brainDir: string;
+  repoRoot: string;
+  config: BrainConfig;
+  decided: DecidedRecord[];
+  observed: ObservedRecord[];
+  hypotheses: HypothesisRecord[];
+  scars: ScarRecord[];
+  scarsBytes: number;
+}
+
+export interface CompileOptions {
+  role: string;
+  env: EnvName;
+  gitSha?: string;
+  maxTokens?: number;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  bypassReadCache?: boolean;
+  allowWorktreeFallback?: boolean;
+}
+
+export interface CompileResult {
+  schema_version: typeof SCHEMA_VERSION;
+  estimator_version: string;
+  chars_per_token: number;
+  safety_margin: number;
+  role: string;
+  env: EnvName;
+  git_sha: string | null;
+  zone_a: string;
+  zone_b: string;
+  zone_a_sha256: string;
+  semantic_hash: string;
+  zone_a_bytes: number;
+  zone_b_bytes: number;
+  zone_a_tokens_est: number;
+  zone_b_tokens_est: number;
+  total_tokens_est: number;
+  max_tokens: number;
+  compile_ms: number;
+  included_decided_ids: string[];
+  included_observed_ids: string[];
+  evicted_ids: string[];
+  excluded_stale_ids: string[];
+  kv_cache_floor_advisory: string | null;
+}
+
+export interface InitOptions {
+  brainDir?: string;
+  repoRoot?: string;
+  signedBy?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface InitResult {
+  brainDir: string;
+  created: string[];
+  skipped: string[];
+}
+
+export interface ObserveOptions {
+  claimId: string;
+  env: EnvName;
+  gitSha: string;
+  ttlSeconds: number;
+  summary: string;
+  evidenceRef: string;
+  issuer: string;
+  roles?: string[];
+  priority?: Priority;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface ObserveResult {
+  record: ObservedRecord;
+  filePath: string;
+}
+
+export interface EvalIssue {
+  claimId: string;
+  rule: string;
+  detail: string;
+  fix: string;
+  exitCode: ExitCode;
+  line?: number;
+}
+
+export interface EvalOptions {
+  strict?: boolean;
+  checkMirror?: boolean;
+  mirrorDirs?: string[];
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  bypassReadCache?: boolean;
+}
+
+export interface EvalResult {
+  ok: boolean;
+  exitCode: ExitCode;
+  issues: EvalIssue[];
+  counts: {
+    decided: number;
+    observed: number;
+    hypotheses: number;
+    scars: number;
+    scarsBytes: number;
+  };
+}
+
+export interface DiffOptions {
+  since?: string;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+}
+
+export type DiffCategory = "scar" | "hypothesis" | "observed" | "decided";
+
+export interface DiffItem {
+  category: DiffCategory;
+  rank: number;
+  id: string;
+  summary: string;
+}
+
+export interface DiffResult {
+  since: string;
+  items: DiffItem[];
+  totalCount: number;
+  rendered: string;
+}
+
+export interface DecideOptions {
+  id: string;
+  priority: Priority;
+  signedBy: string;
+  roles?: string[];
+  envs?: string[];
+  title?: string;
+  supersedes?: string;
+  body?: string;
+  file?: string;
+  issuer?: string;
+  mirrorDirs?: string[];
+  dryRun?: boolean;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface DecideResult {
+  id: string;
+  filePath: string;
+  sha256_body: string;
+  signedBy: string;
+  mirroredTo: string[];
+  dryRun: boolean;
+  content: string;
+}
+
+export interface SignOptions {
+  filePath: string;
+  signedBy?: string;
+  issuer?: string;
+  mirrorDirs?: string[];
+  dryRun?: boolean;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface SignResult {
+  id: string;
+  filePath: string;
+  signedBy: string;
+  sha256_body: string;
+  mirroredTo: string[];
+  dryRun: boolean;
+  content: string;
+}
+
+export interface PromoteOptions {
+  hypId: string;
+  to?: "scar" | "decided";
+  id?: string;
+  priority?: Priority;
+  roles?: string[];
+  envs?: string[];
+  signedBy?: string;
+  title?: string;
+  regressionTest?: string;
+  issuer?: string;
+  mirrorDirs?: string[];
+  dryRun?: boolean;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface PromoteResult {
+  hypId: string;
+  promotedTo: "scar" | "decided";
+  promotedId: string;
+  targetPath: string;
+  mirroredTo: string[];
+  dryRun: boolean;
+  removedHypothesis: boolean;
+}
+
+export interface LintTextOptions {
+  filePath: string;
+  brainDir?: string;
+  repoRoot?: string;
+}
+
+export interface LintTextMatch {
+  line: number;
+  rule: QuarantineRuleId;
+  detail: string;
+  fix: string;
+}
+
+export interface LintTextResult {
+  file: string;
+  clean: boolean;
+  matchCount: number;
+  matches: LintTextMatch[];
+}
+
+export interface HooksInstallOptions {
+  repoRoot?: string;
+  force?: boolean;
+  printCi?: boolean;
+}
+
+export interface HooksInstallResult {
+  hooksDir: string | null;
+  installed: string[];
+  skipped: string[];
+  ciYaml?: string;
+}
+
+export interface VeriBrainErrorInit {
+  exitCode: ExitCode;
+  code: string;
+  claimId: string;
+  rule: string;
+  detail: string;
+  fix: string;
+  line?: number;
+}
+
+export class VeriBrainError extends Error {
+  public readonly exitCode: ExitCode;
+  public readonly code: string;
+  public readonly claimId: string;
+  public readonly rule: string;
+  public readonly detail: string;
+  public readonly fix: string;
+  public readonly line?: number;
+
+  public constructor(init: VeriBrainErrorInit) {
+    super(`${init.code}: ${init.claimId} (${init.rule}) - ${init.detail}`);
+    this.name = "VeriBrainError";
+    this.exitCode = init.exitCode;
+    this.code = init.code;
+    this.claimId = init.claimId;
+    this.rule = init.rule;
+    this.detail = init.detail;
+    this.fix = init.fix;
+    if (init.line !== undefined) {
+      this.line = init.line;
+    }
+  }
+}
+
+export function priorityRank(priority: Priority): number {
+  switch (priority) {
+    case "P0":
+      return 0;
+    case "P1":
+      return 1;
+    case "P2":
+      return 2;
+  }
+}

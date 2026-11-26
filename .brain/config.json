@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "estimator_version": "utf8-3.5x1.15-v1",
+  "chars_per_token": 3.5,
+  "safety_margin": 1.15,
+  "default_max_tokens": 8192,
+  "pinned_ids": [],
+  "quarantine": {
+    "allowed_emails": [],
+    "allowed_domains": [],
+    "allowed_phones": []
+  }
+}

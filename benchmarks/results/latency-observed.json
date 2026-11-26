@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "benchmark": "local-compile-latency",
+  "provenance": "OBSERVED_LOCAL",
+  "cost_usd": 0,
+  "recorded_at_utc": "2026-11-25T09:39:47Z",
+  "environment": {
+    "node_version": "v26.13.1",
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26200",
+    "cpu_model": "Intel(R) Core(TM) 7 150U",
+    "cpu_count": 12
+  },
+  "corpus": {
+    "eval_strict_ok": true,
+    "brain_files": 45,
+    "brain_bytes": 35365,
+    "decided_count": 18,
+    "observed_total": 20,
+    "observed_fresh": 15,
+    "observed_excluded_stale": 5,
+    "scars_count": 10,
+    "scars_bytes": 3533,
+    "hypotheses_count": 5,
+    "zone_a_bytes": 17623,
+    "zone_b_bytes": 8337,
+    "zone_a_tokens_est": 5867,
+    "zone_b_tokens_est": 2877,
+    "total_tokens_est": 8744,
+    "zone_a_sha256": "000f300d49b5afc0488dbaf24eefaeb71713dc4fdeaa3d0033ec833631246741",
+    "semantic_hash": "271052c7ac0b71ad28ba29dbda053bbc0abc7c85ac018ea2d2a507e34c1245ea",
+    "estimator_version": "utf8-3.5x1.15-v1",
+    "evicted_count": 0,
+    "meets_gemini4_4096_floor": true
+  },
+  "modes": {
+    "warm_stat_validated": {
+      "bypass_read_cache": false,
+      "runs": 100,
+      "warmup_runs": 10,
+      "min_ms": 6.389,
+      "p50_ms": 8.484,
+      "p95_ms": 12.622,
+      "p99_ms": 16.292,
+      "max_ms": 17.836,
+      "mean_ms": 8.862,
+      "stddev_ms": 2.044,
+      "unique_zone_a_hashes": 1,
+      "unique_zone_b_outputs": 1,
+      "hash_identity": "100/100"
+    },
+    "cold_disk": {
+      "bypass_read_cache": true,
+      "runs": 100,
+      "warmup_runs": 10,
+      "min_ms": 24.24,
+      "p50_ms": 52.645,
+      "p95_ms": 99.484,
+      "p99_ms": 131.305,
+      "max_ms": 167.429,
+      "mean_ms": 57.667,
+      "stddev_ms": 23.268,
+      "unique_zone_a_hashes": 1,
+      "unique_zone_b_outputs": 1,
+      "hash_identity": "100/100"
+    }
+  },
+  "cross_mode_zone_a_identical": true,
+  "gate": {
+    "target_p95_ms": 15,
+    "warm_p95_pass": true,
+    "cold_p95_pass": false
+  }
+}

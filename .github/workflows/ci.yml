@@ -1,0 +1,236 @@
+name: CI
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main, pre-staging, staging]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    branches: [main, pre-staging, staging]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '24'
+  FIREBASE_TOOLS_VERSION: '15.37.0'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_rules: ${{ steps.detect.outputs.has_rules }}
+      has_e2e: ${{ steps.detect.outputs.has_e2e }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Detect optional rules & E2E suites
+        id: detect
+        run: |
+          if [ -d tests/rules ] && find tests/rules -type f | grep -q . && [ -f package-lock.json ]; then
+            echo "has_rules=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_rules=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -d e2e ] && find e2e -type f | grep -q . && [ -f package-lock.json ]; then
+            echo "has_e2e=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_e2e=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: FinOps Scale-to-Zero Guardrail
+        run: |
+          for cfg_file in apphosting.yaml apphosting.staging.yaml; do
+            grep -Eq '^\s*cpu:\s*1\s*$' "$cfg_file"
+            grep -Eq '^\s*memoryMiB:\s*512\s*$' "$cfg_file"
+            grep -Eq '^\s*minInstances:\s*0\s*$' "$cfg_file"
+          done
+          grep -Eq '^\s*maxInstances:\s*[1-3]\s*$' apphosting.yaml
+          grep -Eq '^\s*maxInstances:\s*1\s*$' apphosting.staging.yaml
+      - name: Register Token-Diet Guardrail (< 8,192 B)
+        run: |
+          for f in PRODUCT.md SECURITY.md QUALITY.md docs/finops-ledger.md docs/progress-reports.md docs/infrastructure-audit.md docs/design-strategy.md; do
+            if [ -f "$f" ]; then
+              bytes=$(wc -c < "$f")
+              echo "$f: $bytes bytes"
+              test "$bytes" -lt 8192
+            fi
+          done
+      - name: Require Lockfile
+        run: test -f package-lock.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        if: hashFiles('package-lock.json') != ''
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Contributor Policy Guardrail (Runtime Deps & LF)
+        if: hashFiles('package-lock.json') != ''
+        run: |
+          node --input-type=module - <<'EOF'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const deps = Object.keys(pkg.dependencies ?? {}).sort();
+          const expected = ['@modelcontextprotocol/sdk', 'zod'];
+          if (JSON.stringify(deps) !== JSON.stringify(expected)) {
+            console.error('Unauthorized runtime dependencies in package.json:', deps);
+            process.exit(1);
+          }
+          const hasExtra = ['optionalDependencies', 'bundledDependencies', 'bundleDependencies'].some((k) => {
+            const v = pkg[k];
+            return Array.isArray(v) ? v.length > 0 : Boolean(v && Object.keys(v).length > 0);
+          });
+          if (hasExtra) {
+            console.error('Optional/bundled dependencies forbidden in package.json');
+            process.exit(1);
+          }
+          function checkLf(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                checkLf(full);
+              } else if (entry.isFile() && fs.readFileSync(full).includes(0x0d)) {
+                console.error('CRLF line endings forbidden:', full);
+                process.exit(1);
+              }
+            }
+          }
+          for (const root of ['src', 'tests', '.github']) {
+            if (fs.existsSync(root)) checkLf(root);
+          }
+          console.log('Contributor Policy Guardrail verified: deps=@modelcontextprotocol/sdk,zod, LF=clean');
+          EOF
+      - name: Run Node Quality Gates (when package-lock.json exists)
+        if: hashFiles('package-lock.json') != ''
+        run: |
+          npm ci
+          npm audit --audit-level=high
+          if [ -f next.config.ts ] || [ -f next.config.mjs ] || [ -f next.config.js ]; then
+            npx next typegen
+          fi
+          npx tsc --noEmit
+          npm run lint
+          npm run build
+          npm test
+      - name: Verify Red-Team Wind Tunnel & Linux Symlink Confinement (RT-PRV-18)
+        if: hashFiles('package-lock.json') != '' && hashFiles('benchmarks/run_redteam.mjs') != ''
+        run: |
+          node benchmarks/run_redteam.mjs
+          node --input-type=module - <<'EOF'
+          import fs from 'node:fs';
+          const report = JSON.parse(fs.readFileSync('benchmarks/results/redteam-observed.json', 'utf8'));
+          const { summary, cases } = report;
+          if (!summary || summary.passed !== summary.total_cases || summary.total_cases < 129) {
+            console.error('Red-team summary gate failed:', summary);
+            process.exit(1);
+          }
+          if (summary.policy_poisoning_escapes !== 0 || summary.secret_canary_leaks !== 0) {
+            console.error('Zero-escape / zero-leak gate failed:', summary);
+            process.exit(1);
+          }
+          const rt18 = Array.isArray(cases) ? cases.find((c) => c.id === 'RT-PRV-18') : undefined;
+          if (!rt18 || rt18.passed !== true || !Array.isArray(rt18.notes) || !rt18.notes.some((n) => n.includes('symlink_created=true'))) {
+            console.error('Linux symlink confinement proof (RT-PRV-18) failed:', rt18);
+            process.exit(1);
+          }
+          console.log(`Linux RT-PRV-18 symlink confinement verified (${summary.passed}/${summary.total_cases}, 0 escapes, 0 leaks)`);
+          EOF
+          git checkout -- benchmarks/results/redteam-observed.json
+      - name: Verify CLI Packaging & Smoke (dist/cli.js + npm pack)
+        if: hashFiles('package-lock.json') != ''
+        run: |
+          test -f dist/cli.js
+          node --input-type=module - <<'EOF'
+          import fs from 'node:fs';
+          const buf = fs.readFileSync('dist/cli.js');
+          const shebang = Buffer.from('#!/usr/bin/env node\n');
+          if (!buf.subarray(0, shebang.length).equals(shebang) || buf.includes(0x0d)) {
+            console.error('dist/cli.js must start with LF shebang #!/usr/bin/env node and contain zero CR bytes');
+            process.exit(1);
+          }
+          EOF
+          node ./dist/cli.js --help >/dev/null
+          if [ -d .brain ]; then
+            node ./dist/cli.js eval --strict
+          fi
+          npm pack --dry-run
+      - name: Upload Build Artifact
+        if: hashFiles('.next/BUILD_ID') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: next-build
+          path: .next
+          include-hidden-files: true
+          retention-days: 1
+
+  rules-emulator:
+    needs: quality
+    if: needs.quality.outputs.has_rules == 'true' && (github.ref != 'refs/heads/pre-staging' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ env.FIREBASE_TOOLS_VERSION }}
+      - name: Run Firestore/Storage Rules Emulator Tests
+        run: |
+          npm ci
+          npx --yes firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }} emulators:exec --project demo-veribrain --only firestore,storage "npm run test:rules"
+
+  chromium-smoke:
+    needs: quality
+    if: needs.quality.outputs.has_e2e == 'true' && (github.ref != 'refs/heads/pre-staging' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        continue-on-error: true
+        with:
+          name: next-build
+          path: .next
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install dependencies & Chromium
+        run: |
+          npm ci
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then
+            npx playwright install --with-deps chromium
+          else
+            npx playwright install-deps chromium
+          fi
+      - name: Start production server & run Playwright smoke
+        run: |
+          npx next start -H 127.0.0.1 -p 3000 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3000 >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:3000 >/dev/null
+          npx playwright test
