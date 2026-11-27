@@ -34,6 +34,12 @@ export const MAX_HYPOTHESIS_TTL_SECONDS = 7 * 24 * 60 * 60;
 export const MAX_OBSERVED_TTL_SECONDS = 2_592_000;
 export const MAX_ENV_TTL_SECONDS = 7 * 24 * 60 * 60;
 export const KV_CACHE_MIN_FLOOR_TOKENS = 1024;
+export const DEFAULT_METRICS_MAX_BYTES = 2_097_152;
+export const MIN_METRICS_MAX_BYTES = 1024;
+export const MAX_METRICS_MAX_BYTES = 10_485_760;
+
+export const VALID_METRIC_SOURCES = ["cli", "mcp"] as const;
+export type MetricSource = (typeof VALID_METRIC_SOURCES)[number];
 
 export const VALID_PRIORITIES = ["P0", "P1", "P2"] as const;
 export type Priority = (typeof VALID_PRIORITIES)[number];
@@ -66,6 +72,12 @@ export interface QuarantineConfig {
   allowed_phones: string[];
 }
 
+export interface MetricsConfig {
+  enabled: boolean;
+  baseline_paths?: string[];
+  max_bytes?: number;
+}
+
 export interface BrainConfig {
   schema_version: SchemaVersion;
   estimator_version: string;
@@ -77,6 +89,7 @@ export interface BrainConfig {
   semantic_keys?: Record<string, string | number | boolean>;
   mirror_dirs?: string[];
   zone_a_layout?: ZoneALayout;
+  metrics?: MetricsConfig;
 }
 
 export interface DecidedRecord {
@@ -154,6 +167,9 @@ export interface CompileOptions {
   now?: Date;
   bypassReadCache?: boolean;
   allowWorktreeFallback?: boolean;
+  recordMetrics?: boolean;
+  metricSource?: MetricSource;
+  envVars?: NodeJS.ProcessEnv;
 }
 
 export interface CompileResult {
@@ -535,6 +551,63 @@ export interface RetroResult {
     promote_command: string;
   }>;
   markdown: string;
+}
+
+export interface CompileMetricEvent {
+  ts: string;
+  source: MetricSource;
+  role: string;
+  env: string;
+  layout: ZoneALayout;
+  zone_a0_sha256: string;
+  zone_a_sha256: string;
+  zone_a0_tokens: number;
+  zone_a_tokens: number;
+  zone_b_tokens: number;
+  total_tokens: number;
+  compile_ms: number;
+}
+
+export type StatsFormat = "text" | "md" | "json";
+
+export interface StatsOptions {
+  since?: string;
+  baselinePaths?: string[];
+  format?: StatsFormat;
+  enable?: boolean;
+  disable?: boolean;
+  reset?: boolean;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface StatsResult {
+  enabled: boolean;
+  since: string;
+  action?: "enabled" | "disabled" | "reset";
+  compiles_total: number;
+  cli_compiles: number;
+  mcp_compiles: number;
+  zone_a0_eligible_compiles: number;
+  zone_a0_repeat_hits: number;
+  zone_a0_cross_role_hits: number;
+  zone_a0_cacheable_tokens_reused: number;
+  estimated_cache_discount_tokens_at_90pct: number;
+  avg_zone_a0_tokens: number;
+  avg_zone_a_tokens: number;
+  avg_zone_b_tokens: number;
+  avg_total_tokens: number;
+  avg_compile_ms: number;
+  baseline_paths_used: string[];
+  baseline_docs_files: number;
+  baseline_docs_bytes: number;
+  baseline_docs_tokens_est: number;
+  tokens_avoided_vs_baseline_docs: number;
+  compression_ratio_pct: number;
+  skipped_corrupt_lines: number;
+  methodology_note: string;
 }
 
 export interface VeriBrainErrorInit {

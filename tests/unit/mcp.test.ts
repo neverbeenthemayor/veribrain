@@ -154,7 +154,7 @@ describe("VeriBrain local stdio MCP server & cross-client config", () => {
     await client.connect(transport);
     try {
       const listed = await client.listTools();
-      expect(listed.tools).toHaveLength(6);
+      expect(listed.tools).toHaveLength(7);
     } finally {
       await client.close();
     }
@@ -260,7 +260,7 @@ describe("VeriBrain local stdio MCP server & cross-client config", () => {
     }
   });
 
-  it("exposes exact 6 tools with read-only / Tier-3 boundaries, veribrain_list_claims, and fail-closed quarantine", async () => {
+  it("exposes exact 7 tools with read-only / Tier-3 boundaries, veribrain_list_claims, veribrain_stats, and fail-closed quarantine", async () => {
     const { root, brainDir } = makeTempWorkspace();
     const server = createVeriBrainMcpServer({ brainDir, repoRoot: root });
     const client = new Client({ name: "veribrain-unit-test", version: "1.1.0" });
@@ -269,7 +269,7 @@ describe("VeriBrain local stdio MCP server & cross-client config", () => {
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 
     try {
-      // 1. Exact 6 tools registered
+      // 1. Exact 7 tools registered
       const listed = await client.listTools();
       const names = listed.tools.map((t) => t.name).sort();
       expect(names).toEqual([
@@ -278,6 +278,7 @@ describe("VeriBrain local stdio MCP server & cross-client config", () => {
         "veribrain_list_claims",
         "veribrain_propose_scar",
         "veribrain_record_hypothesis",
+        "veribrain_stats",
         "veribrain_status",
       ]);
 
@@ -286,6 +287,8 @@ describe("VeriBrain local stdio MCP server & cross-client config", () => {
       expect(byName.get("veribrain_get_claim")?.annotations?.readOnlyHint).toBe(true);
       expect(byName.get("veribrain_list_claims")?.annotations?.readOnlyHint).toBe(true);
       expect(byName.get("veribrain_list_claims")?.annotations?.idempotentHint).toBe(true);
+      expect(byName.get("veribrain_stats")?.annotations?.readOnlyHint).toBe(true);
+      expect(byName.get("veribrain_stats")?.annotations?.idempotentHint).toBe(true);
       expect(byName.get("veribrain_status")?.annotations?.readOnlyHint).toBe(true);
       expect(byName.get("veribrain_record_hypothesis")?.annotations?.readOnlyHint).toBe(false);
       expect(byName.get("veribrain_propose_scar")?.annotations?.readOnlyHint).toBe(false);

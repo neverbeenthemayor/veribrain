@@ -4,6 +4,21 @@ All notable changes to **VeriBrain** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-28
+
+Local `$0` ROI & Token-Savings Telemetry Wave (`PRG-3`: `PM-701`, `3/20 pts`; `PM-505` `3 pts` remains `PARKED`), preserving 100% byte-identical backward compatibility across `Zone A` / `Zone A0` compilation and strictly opt-in zero-PII local telemetry (`$0.00/mo` runtime, zero new dependencies).
+
+### Added & Changed
+
+- **Opt-In Zero-PII Local Metrics Ledger (`src/metrics.ts`, `.gitignore`):**
+  - Added `.brain/.metrics.jsonl` (gitignored alongside `.brain/.metrics.json`, disabled by default; records only when `config.metrics.enabled === true`, `VERIBRAIN_METRICS=1|true`, or `recordMetrics: true`, with `veribrain retro` passing `recordMetrics: false` to avoid inflating stats).
+  - Stores strictly 12 scalar/digest fields (`ts`, `source`, `role`, `env`, `layout`, `zone_a0_sha256` & `zone_a_sha256` 12-hex prefixes, token counts, `compile_ms`) — zero prompt/rule text, secrets, PII, or raw paths; rejects corrupt/overflow lines, enforces `O_NOFOLLOW` + `lstatSync`/`realpathSync` confinement, atomically compacts ~50% self-healing tail at `metrics.max_bytes` (`1024..10485760`, default `2 MiB`), and is ignored by `eval`, `diff`, `retro`, `check-citations`, and `mirror`.
+- **CLI ROI & Telemetry Reporter (`veribrain stats`):**
+  - Added `veribrain stats [--since 30d|7d|24h|all] [--baseline-paths <csv>] [--format text|md|json] [--enable | --disable | --reset]`.
+  - Enforces pre-flag `Exit 4` agent refusal for `--enable`/`--disable`/`--reset` while keeping read-only `stats` available in agent mode and MCP; checks symlink ancestors (`Exit 4`) before `.brain/` creation, validates `--repo-root` via `lstatSync` prior to `realpathSync`, syncs `config.mirror_dirs` on toggle, pre-quarantines `--since`/`--format` (`Exit 2`, zero truncated secret reflection), scans bounded baseline docs (`<= 500` files / `512 KB` / depth `32`), tracks adjacent `zone_a0_cross_role_hits`, and prints explicit measured-vs-estimated `methodology_note` (`<= 80` cols plain ASCII text output).
+- **7th MCP Tool & Release Parity (`veribrain_stats`, `v1.3.0`):**
+  - Registered read-only MCP tool `veribrain_stats` (`readOnlyHint: true`, `idempotentHint: true`, `{ since?, format?: "json" | "md" }`), tagged `veribrain_compile_context` events with `metricSource: "mcp"`, covered `/src/metrics.ts` and `/src/commands/stats.ts` in `.github/CODEOWNERS`, and bumped CLI/MCP/package metadata to `1.3.0`.
+
 ## [1.2.0] - 2026-11-27
 
 Constitutional Prefix Split, Test Attestation, Doc Drift Audit & Retro DX Wave (`PRG-2`: `PM-601`–`PM-605`, `18/20 pts`), preserving 100% byte-identical backward compatibility with `schema_version: "1.0"` legacy Zone A compilation (`$0.00/mo` runtime, zero new dependencies).

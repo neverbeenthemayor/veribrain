@@ -19,6 +19,7 @@ import {
   type BrainConfig,
   DEFAULT_CHARS_PER_TOKEN,
   DEFAULT_MAX_TOKENS,
+  DEFAULT_METRICS_MAX_BYTES,
   DEFAULT_SAFETY_MARGIN,
   type DecidedRecord,
   type DecidedStatus,
@@ -32,9 +33,12 @@ import {
   type LoadedBrain,
   MAX_ENV_TTL_SECONDS,
   MAX_HYPOTHESIS_TTL_SECONDS,
+  MAX_METRICS_MAX_BYTES,
   MAX_OBSERVED_TTL_SECONDS,
   MAX_SCAR_TTL_SECONDS,
   MAX_SCARS_BYTES,
+  type MetricsConfig,
+  MIN_METRICS_MAX_BYTES,
   type ObservedRecord,
   type ObservedTtlMode,
   type Priority,
@@ -1093,6 +1097,101 @@ export function loadBrainConfig(brainDir: string, bypassReadCache = false): Brai
     zoneALayout = obj.zone_a_layout;
   }
 
+  let metrics: MetricsConfig | undefined;
+  if (obj.metrics !== undefined) {
+    if (obj.metrics === null || typeof obj.metrics !== "object" || Array.isArray(obj.metrics)) {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "SCHEMA_ERROR",
+        claimId: "config.json",
+        rule: "invalid_metrics_config",
+        detail: "config.metrics must be an object with boolean field enabled.",
+        fix: 'Set "metrics": { "enabled": false } in .brain/config.json.',
+      });
+    }
+    const mObj = obj.metrics as Record<string, unknown>;
+    if (typeof mObj.enabled !== "boolean") {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "SCHEMA_ERROR",
+        claimId: "config.json",
+        rule: "invalid_metrics_enabled",
+        detail: "config.metrics.enabled must be a boolean.",
+        fix: 'Set "metrics": { "enabled": true | false } in .brain/config.json.',
+      });
+    }
+
+    let baselinePaths: string[] | undefined;
+    if (mObj.baseline_paths !== undefined) {
+      const rawPaths = asStringArray(mObj.baseline_paths, "config.json", "metrics.baseline_paths");
+      if (rawPaths.length > 500) {
+        throw new VeriBrainError({
+          exitCode: EXIT_ERROR,
+          code: "SCHEMA_ERROR",
+          claimId: "config.json",
+          rule: "invalid_metrics_baseline_paths",
+          detail: "config.metrics.baseline_paths exceeds maximum limit of 500 paths.",
+          fix: "Keep metrics.baseline_paths to <= 500 repo-relative paths.",
+        });
+      }
+      baselinePaths = [];
+      for (const rawPath of rawPaths) {
+        if (
+          rawPath.includes("\0") ||
+          rawPath.includes("\n") ||
+          rawPath.includes("\r") ||
+          hasControlOrBidiChars(rawPath) ||
+          rawPath.startsWith("/") ||
+          rawPath.startsWith("\\") ||
+          isUncOrDevicePath(rawPath) ||
+          path.isAbsolute(rawPath) ||
+          /^[A-Za-z]:/.test(rawPath) ||
+          rawPath.split(/[\\/]/).some((seg) => seg === "..") ||
+          isBlockedSystemOrIsolationPath(rawPath)
+        ) {
+          throw new VeriBrainError({
+            exitCode: EXIT_PROVENANCE_VIOLATION,
+            code: "PROVENANCE_VIOLATION",
+            claimId: "config.json",
+            rule: "invalid_metrics_baseline_paths",
+            detail:
+              "config.metrics.baseline_paths entries must be safe repo-relative paths without traversal.",
+            fix: "Use repo-relative markdown/doc paths inside the repository root.",
+          });
+        }
+        baselinePaths.push(rawPath.replace(/\\/g, "/"));
+      }
+    }
+
+    let maxBytes: number | undefined;
+    if (mObj.max_bytes !== undefined) {
+      if (
+        typeof mObj.max_bytes !== "number" ||
+        !Number.isInteger(mObj.max_bytes) ||
+        mObj.max_bytes < MIN_METRICS_MAX_BYTES ||
+        mObj.max_bytes > MAX_METRICS_MAX_BYTES
+      ) {
+        throw new VeriBrainError({
+          exitCode: EXIT_ERROR,
+          code: "SCHEMA_ERROR",
+          claimId: "config.json",
+          rule: "invalid_metrics_max_bytes",
+          detail: `config.metrics.max_bytes must be an integer between ${MIN_METRICS_MAX_BYTES} and ${MAX_METRICS_MAX_BYTES}.`,
+          fix: `Set metrics.max_bytes to e.g. ${DEFAULT_METRICS_MAX_BYTES} (2 MiB).`,
+        });
+      }
+      maxBytes = mObj.max_bytes;
+    }
+
+    metrics = { enabled: mObj.enabled };
+    if (baselinePaths !== undefined) {
+      metrics.baseline_paths = baselinePaths;
+    }
+    if (maxBytes !== undefined) {
+      metrics.max_bytes = maxBytes;
+    }
+  }
+
   const cfg: BrainConfig = {
     schema_version: schemaVersion,
     estimator_version: estimatorVersion,
@@ -1110,6 +1209,9 @@ export function loadBrainConfig(brainDir: string, bypassReadCache = false): Brai
   }
   if (zoneALayout !== undefined) {
     cfg.zone_a_layout = zoneALayout;
+  }
+  if (metrics !== undefined) {
+    cfg.metrics = metrics;
   }
   return cfg;
 }

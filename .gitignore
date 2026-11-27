@@ -9,8 +9,10 @@ coverage/
 .firebase/
 .vercel/
 
-# VeriBrain compiled ephemeral artifacts (rebuilt deterministically)
+# VeriBrain compiled ephemeral artifacts & opt-in local telemetry (never committed)
 .brain/compiled/
+.brain/.metrics.jsonl
+.brain/.metrics.json
 
 # Secrets & credentials — NEVER commit
 .env

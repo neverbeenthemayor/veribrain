@@ -14,6 +14,7 @@ import { printMcpClientConfig } from "./commands/mcp.js";
 import { writeObservation } from "./commands/observe.js";
 import { promoteHypothesis } from "./commands/promote.js";
 import { generateRetroReport } from "./commands/retro.js";
+import { formatStatsMarkdown, formatStatsText, runStats } from "./commands/stats.js";
 import { compileContext, formatCompiledMarkdown } from "./compiler.js";
 import { truncateAscii, wrapAsciiLines } from "./normalize.js";
 import { scanTextForQuarantine } from "./quarantine.js";
@@ -48,11 +49,13 @@ import {
   type PromoteOptions,
   type RetroOptions,
   type SignOptions,
+  type StatsFormat,
+  type StatsOptions,
   VeriBrainError,
   type ZoneALayout,
 } from "./types.js";
 
-const CLI_VERSION = "1.2.0";
+const CLI_VERSION = "1.3.0";
 const MAX_COLS = 80;
 
 const HELP_TEXT = [
@@ -69,9 +72,10 @@ const HELP_TEXT = [
   "  eval             Run $0 schema, quarantine & mirror checks [--strict]",
   "  check-citations  Audit docs for missing/superseded DEC-*/OBS-* citations",
   "  diff / retro     Weekly 1-screen diff or uncapped retro digest [--since 7d]",
+  "  stats            Local $0 ROI & token-savings telemetry [--since 30d]",
   "  lint-text        Dry-run quarantine check on any file [--format text|json]",
   "  hooks            Install Git hooks or print CI YAML [install --print-ci]",
-  "  mcp              Run stdio MCP server (6 tools) [--print-config <client>]",
+  "  mcp              Run stdio MCP server (7 tools) [--print-config <client>]",
   "",
   "Options: --brain-dir/--brain <p> | --repo-root <p> | --help | --version",
   "Exits:   0 ok | 1 error/eval | 2 quarantine | 3 budget | 4 provenance",
@@ -223,6 +227,20 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "  --brain-dir <path>    Path to .brain directory (default: .brain)",
     "",
   ].join("\n"),
+  stats: [
+    "Usage: veribrain stats [options]",
+    "",
+    "Report local $0 compile telemetry, Zone A0 cache reuse & doc compression.",
+    "",
+    "Options:",
+    "  --since <window>        30d (default) | 7d | 24h | all",
+    "  --baseline-paths <csv>  Repo-relative docs for token comparison",
+    "  --format <fmt>          text (default) | md | json",
+    "  --enable | --disable    Toggle opt-in telemetry in config.json (human)",
+    "  --reset                 Delete .brain/.metrics.jsonl (human only)",
+    "  --brain-dir <path>      Path to .brain directory (default: .brain)",
+    "",
+  ].join("\n"),
   "lint-text": [
     "Usage: veribrain lint-text <file> [--format text|json]",
     "",
@@ -247,7 +265,7 @@ const SUBCOMMAND_HELP: Record<string, string> = {
   mcp: [
     "Usage: veribrain mcp [options]",
     "",
-    "Start local stdio MCP server (6 tools; zero stdout logging).",
+    "Start local stdio MCP server (7 tools; zero stdout logging).",
     "",
     "Options:",
     "  --print-config <cli>  antigravity | claude-code | cursor | codex",
@@ -298,6 +316,7 @@ const VALUE_FLAGS = new Set([
   "arg",
   "timeout",
   "paths",
+  "baseline-paths",
   "ignore-ids",
   "summary",
   "evidence",
@@ -321,6 +340,9 @@ const BOOLEAN_FLAGS = new Set([
   "record-failure",
   "include-code-blocks",
   "decided-only",
+  "enable",
+  "disable",
+  "reset",
 ]);
 
 const COMMANDS_WITH_POSITIONAL = new Set(["sign", "promote", "lint-text", "hooks"]);
@@ -604,6 +626,30 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
         fix: "Run veribrain attest-test outside agent mode from CI, hook, or verifier script.",
       });
     }
+    const hasStatsMutatorFlag = preDashArgs.some(
+      (a) =>
+        a === "--enable" ||
+        a === "--disable" ||
+        a === "--reset" ||
+        a.startsWith("--enable=") ||
+        a.startsWith("--disable=") ||
+        a.startsWith("--reset="),
+    );
+    if (
+      !hasHelpOrVersion &&
+      isAgentEnvironment(envVars) &&
+      peekCliCommand(argv) === "stats" &&
+      hasStatsMutatorFlag
+    ) {
+      throw new VeriBrainError({
+        exitCode: EXIT_PROVENANCE_VIOLATION,
+        code: "PROVENANCE_VIOLATION",
+        claimId: "stats",
+        rule: "agent_mutator_denied",
+        detail: "Agents cannot mutate metrics settings or reset .brain/.metrics.jsonl.",
+        fix: "Run read-only `veribrain stats` or ask a human to run --enable/--disable/--reset.",
+      });
+    }
 
     const { command, positionals, passthroughArgs, flags, multiFlags } = parseCliArgs(argv);
 
@@ -697,6 +743,8 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
         const compileOpts: CompileOptions = {
           role,
           env: envRaw as EnvName,
+          metricSource: "cli",
+          envVars,
         };
         if (brainDir !== undefined) compileOpts.brainDir = brainDir;
         if (repoRoot !== undefined) compileOpts.repoRoot = repoRoot;
@@ -1244,6 +1292,92 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
           io.stdout(`${JSON.stringify(res, null, 2)}\n`);
         } else {
           io.stdout(res.markdown);
+        }
+        return EXIT_OK;
+      }
+
+      case "stats": {
+        const enable = flags.get("enable") === true;
+        const disable = flags.get("disable") === true;
+        const reset = flags.get("reset") === true;
+        if ((enable || disable || reset) && isAgentEnvironment(envVars)) {
+          throw new VeriBrainError({
+            exitCode: EXIT_PROVENANCE_VIOLATION,
+            code: "PROVENANCE_VIOLATION",
+            claimId: "stats",
+            rule: "agent_mutator_denied",
+            detail: "Agents cannot mutate metrics settings or reset .brain/.metrics.jsonl.",
+            fix: "Run read-only `veribrain stats` or ask a human to run --enable/--disable/--reset.",
+          });
+        }
+
+        const rawFormatFlag = getStringFlag(flags, "format");
+        const formatRaw = (rawFormatFlag ?? "text").trim().toLowerCase();
+        if (formatRaw !== "text" && formatRaw !== "md" && formatRaw !== "json") {
+          if (
+            rawFormatFlag !== undefined &&
+            scanTextForQuarantine(rawFormatFlag, {
+              claimId: "stats",
+              field: "format",
+              allowHashRefExemption: false,
+            }) !== null
+          ) {
+            throw new VeriBrainError({
+              exitCode: EXIT_QUARANTINE_VIOLATION,
+              code: "QUARANTINE_VIOLATION",
+              claimId: "stats",
+              rule: "quarantine_flag_value",
+              detail: "Sensitive pattern detected in --format value (redacted).",
+              fix: "Pass --format text|md|json without secrets or PII.",
+            });
+          }
+          throw new VeriBrainError({
+            exitCode: EXIT_ERROR,
+            code: "CLI_ERROR",
+            claimId: "stats",
+            rule: "invalid_format",
+            detail: "--format must be text, md, or json.",
+            fix: "Pass --format text|md|json.",
+          });
+        }
+
+        const statsOpts: StatsOptions = {
+          format: formatRaw as StatsFormat,
+          enable,
+          disable,
+          reset,
+          envVars,
+        };
+        if (brainDir !== undefined) statsOpts.brainDir = brainDir;
+        if (repoRoot !== undefined) statsOpts.repoRoot = repoRoot;
+        const since = getStringFlag(flags, "since");
+        if (since !== undefined) statsOpts.since = since;
+        const rawBaselinePaths = getStringFlag(flags, "baseline-paths");
+        if (rawBaselinePaths !== undefined) {
+          const parsedBaseline = rawBaselinePaths
+            .split(",")
+            .map((part) => part.trim())
+            .filter((part) => part.length > 0);
+          if (parsedBaseline.length === 0) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId: "stats",
+              rule: "empty_baseline_paths",
+              detail: "--baseline-paths cannot be empty when specified.",
+              fix: "Pass comma-separated repo-relative paths or omit --baseline-paths.",
+            });
+          }
+          statsOpts.baselinePaths = parsedBaseline;
+        }
+
+        const res = runStats(statsOpts);
+        if (formatRaw === "json") {
+          io.stdout(`${JSON.stringify(res, null, 2)}\n`);
+        } else if (formatRaw === "md") {
+          io.stdout(formatStatsMarkdown(res));
+        } else {
+          io.stdout(formatStatsText(res));
         }
         return EXIT_OK;
       }

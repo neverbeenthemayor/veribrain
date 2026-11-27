@@ -200,7 +200,10 @@ describe("PRG-2 (v1.2.0) Golden Acceptance Suite (PM-601..PM-605)", () => {
     expect(String(legacy.zone_a)).not.toContain(ZONE_A0_BOUNDARY_MARKER);
     expect(legacy.semantic_hash).not.toBe(byRole.get("builder")?.semantic_hash);
 
-    // Real stdio MCP server exposes zone_a_layout="split" and version 1.2.0
+    // Real stdio MCP server exposes zone_a_layout="split" and current package version
+    const pkgVersion = (
+      JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8")) as { version: string }
+    ).version;
     const transport = new StdioClientTransport({
       command: process.execPath,
       args: [DIST_CLI, "mcp", "--brain-dir", brainDir, "--repo-root", repo],
@@ -210,7 +213,7 @@ describe("PRG-2 (v1.2.0) Golden Acceptance Suite (PM-601..PM-605)", () => {
     const client = new Client({ name: "prg2-golden-client", version: "1.0.0" });
     try {
       await client.connect(transport);
-      expect(client.getServerVersion()?.version).toBe("1.2.0");
+      expect(client.getServerVersion()?.version).toBe(pkgVersion);
 
       const mcpBuilder = parseMcpJson(
         (await client.callTool({
@@ -683,18 +686,17 @@ describe("PRG-2 (v1.2.0) Golden Acceptance Suite (PM-601..PM-605)", () => {
     expect(retroMdRes.stdout).not.toContain("—");
   });
 
-  it("PM-605: diff emits tier-aware actions and [DEC] slugs within 80 cols / 25 lines ASCII, and package/CLI versions align at 1.2.0", () => {
-    const verRes = runDistCli(["--version"], REPO_ROOT);
-    expect(verRes.status).toBe(EXIT_OK);
-    expect(verRes.stdout).toBe("veribrain 1.2.0\n");
-
+  it("PM-605: diff emits tier-aware actions and [DEC] slugs within 80 cols / 25 lines ASCII, and package/CLI versions align", () => {
     const pkg = JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8")) as {
       version: string;
       bin: Record<string, string>;
       repository: { url: string };
       dependencies: Record<string, string>;
     };
-    expect(pkg.version).toBe("1.2.0");
+    const verRes = runDistCli(["--version"], REPO_ROOT);
+    expect(verRes.status).toBe(EXIT_OK);
+    expect(verRes.stdout).toBe(`veribrain ${pkg.version}\n`);
+    expect(pkg.version).toBe("1.3.0");
     expect(pkg.bin.veribrain).toBe("dist/cli.js");
     expect(pkg.repository.url).toBe("git+https://github.com/neverbeenthemayor/veribrain.git");
     expect(Object.keys(pkg.dependencies).sort()).toEqual(["@modelcontextprotocol/sdk", "zod"]);

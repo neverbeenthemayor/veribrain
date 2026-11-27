@@ -38,12 +38,28 @@ export {
 export { writeObservation } from "./commands/observe.js";
 export { promoteHypothesis } from "./commands/promote.js";
 export { DEFAULT_RETRO_ROLES, generateRetroReport } from "./commands/retro.js";
+export { formatStatsMarkdown, formatStatsText, runStats } from "./commands/stats.js";
 export { compileContext, formatCompiledMarkdown } from "./compiler.js";
 export {
   createVeriBrainMcpServer,
   startMcpStdioServer,
   type VeriBrainMcpServerOptions,
 } from "./mcp/server.js";
+export {
+  appendMetricEvent,
+  assertMetricsPathConfinement,
+  atomicWriteBrainConfig,
+  type ConfinedBrainFile,
+  isMetricsEnabled,
+  isMetricsEnvEnabled,
+  isValidMetricSource,
+  LEGACY_METRICS_JSON_FILENAME,
+  METRICS_FILENAME,
+  readMetricEvents,
+  recordCompileMetricBestEffort,
+  resetMetricsLedger,
+  resolveMetricsMaxBytes,
+} from "./metrics.js";
 export {
   atomicWriteUtf8,
   checkMirrorDrift,
@@ -141,10 +157,12 @@ export {
   type CheckCitationsResult,
   type CitationIssue,
   type CitationIssueKind,
+  type CompileMetricEvent,
   type CompileOptions,
   type CompileResult,
   DEFAULT_CHARS_PER_TOKEN,
   DEFAULT_MAX_TOKENS,
+  DEFAULT_METRICS_MAX_BYTES,
   DEFAULT_SAFETY_MARGIN,
   type DecidedRecord,
   type DecidedStatus,
@@ -180,9 +198,13 @@ export {
   type LoadedBrain,
   MAX_ENV_TTL_SECONDS,
   MAX_HYPOTHESIS_TTL_SECONDS,
+  MAX_METRICS_MAX_BYTES,
   MAX_OBSERVED_TTL_SECONDS,
   MAX_SCAR_TTL_SECONDS,
   MAX_SCARS_BYTES,
+  type MetricSource,
+  type MetricsConfig,
+  MIN_METRICS_MAX_BYTES,
   type ObservedRecord,
   type ObservedTtlMode,
   type ObserveOptions,
@@ -203,9 +225,13 @@ export {
   type SchemaVersion,
   type SignOptions,
   type SignResult,
+  type StatsFormat,
+  type StatsOptions,
+  type StatsResult,
   VALID_DECIDED_STATUSES,
   VALID_ENVS,
   VALID_ISSUERS,
+  VALID_METRIC_SOURCES,
   VALID_OBSERVED_TTL_MODES,
   VALID_PRIORITIES,
   VALID_SCHEMA_VERSIONS,

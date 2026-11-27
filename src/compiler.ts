@@ -1,5 +1,10 @@
 import { performance } from "node:perf_hooks";
 import {
+  isMetricsEnabled,
+  recordCompileMetricBestEffort,
+  resolveMetricsMaxBytes,
+} from "./metrics.js";
+import {
   canonicalJsonStringify,
   compareAscii,
   estimateTokens,
@@ -624,6 +629,35 @@ export function compileContext(options: CompileOptions): CompileResult {
         ? `Zone A (${zoneATokensEst} est. tokens) is below ${KV_CACHE_MIN_FLOOR_TOKENS}-token provider KV-cache floor.`
         : null;
   const compileMs = Number((performance.now() - startMs).toFixed(3));
+
+  if (
+    isMetricsEnabled(config, {
+      ...(options.recordMetrics !== undefined ? { recordMetrics: options.recordMetrics } : {}),
+      ...(options.envVars !== undefined ? { envVars: options.envVars } : {}),
+    })
+  ) {
+    recordCompileMetricBestEffort(
+      brain.brainDir,
+      {
+        ts: now.toISOString().replace(/\.\d{3}Z$/, "Z"),
+        source: options.metricSource ?? "cli",
+        role,
+        env: options.env,
+        layout: zoneALayout,
+        zone_a0_sha256: zoneA0Sha256.slice(0, 12),
+        zone_a_sha256: zoneASha256.slice(0, 12),
+        zone_a0_tokens: zoneA0TokensEst,
+        zone_a_tokens: zoneATokensEst,
+        zone_b_tokens: zoneBTokensEst,
+        total_tokens: totalTokensEst,
+        compile_ms: compileMs,
+      },
+      {
+        repoRoot: brain.repoRoot,
+        maxBytes: resolveMetricsMaxBytes(config),
+      },
+    );
+  }
 
   return {
     schema_version: config.schema_version,

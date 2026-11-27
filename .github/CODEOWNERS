@@ -13,6 +13,7 @@
 /src/sanitize.ts @neverbeenthemayor
 /src/schema.ts @neverbeenthemayor
 /src/mirror.ts @neverbeenthemayor
+/src/metrics.ts @neverbeenthemayor
 /src/compiler.ts @neverbeenthemayor
 /src/mcp/ @neverbeenthemayor
 /src/commands/decide.ts @neverbeenthemayor
@@ -23,3 +24,4 @@
 /src/commands/attest-test.ts @neverbeenthemayor
 /src/commands/check-citations.ts @neverbeenthemayor
 /src/commands/retro.ts @neverbeenthemayor
+/src/commands/stats.ts @neverbeenthemayor

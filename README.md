@@ -1,4 +1,4 @@
-# VeriBrain (`v1.2.0`)
+# VeriBrain (`v1.3.0`)
 
 **Zero-dollar deterministic, provenance-verified context compiler and local `stdio` MCP shared brain for multi-agent engineering.**
 
@@ -43,7 +43,11 @@ npx veribrain hooks install
 npx veribrain diff --since 7d
 npx veribrain retro --since 7d --format md
 
-# 6. Print local stdio MCP client config (antigravity | claude-code | cursor | codex)
+# 6. Enable opt-in local $0 ROI & Zone A0 reuse telemetry (disabled by default)
+npx veribrain stats --enable
+npx veribrain stats --since 30d
+
+# 7. Print local stdio MCP client config (antigravity | claude-code | cursor | codex)
 npx veribrain mcp --print-config antigravity
 ```
 
@@ -105,6 +109,7 @@ VeriBrain ships a local `stdio` MCP server (`@modelcontextprotocol/sdk`) shared 
 | `veribrain_record_hypothesis` | **Tier 3 Only** | Validates `HYP-*` ID (`<= 64` chars), hint (`<= 4,096 B`), roles (`<= 32`), TTL (`1..7d`), scrubs secrets, writes atomically to `.brain/hypotheses/` |
 | `veribrain_propose_scar` | **Tier 3 Proposal** | Validates existing repo-relative `regression_test` & `< 4,096 B` headroom, queues `HYP-SCAR-*.json` for human `veribrain promote` / `diff` (never edits `scars.md`) |
 | `veribrain_status` | **Read-Only** | Reports `.brain/` health, counts, `scars.md` byte budget, expired counts, pending scar proposals, and `eval` verdict |
+| `veribrain_stats` | **Read-Only** | Reports opt-in local compile telemetry, Zone `A0` prefix reuse, baseline doc compression, and methodology notes (`since`, `format`) |
 
 ---
 

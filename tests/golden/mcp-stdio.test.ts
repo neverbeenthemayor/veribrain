@@ -95,7 +95,7 @@ afterEach(() => {
 });
 
 describe("Gate 3 Golden Stdio MCP Verification (PM-304)", () => {
-  it("runs all 6 registered MCP tools over real dist/cli.js stdio with zero stdout pollution, byte-identical Zone A, < 15 ms warm compile, and fail-closed write/quarantine/confinement enforcement", async () => {
+  it("runs all 7 registered MCP tools over real dist/cli.js stdio with zero stdout pollution, byte-identical Zone A, < 15 ms warm compile, and fail-closed write/quarantine/confinement enforcement", async () => {
     const { root, brainDir } = tracker.create("vb-mcp-golden-", "Ian Mayor");
     const nowMs = Math.floor(Date.now() / 1000) * 1000;
     const hourMs = 60 * 60 * 1000;
@@ -204,7 +204,7 @@ describe("Gate 3 Golden Stdio MCP Verification (PM-304)", () => {
     await client.connect(transport);
 
     try {
-      // 1. Exact 6 registered MCP tools (5 RFC-001 + PRG-1 veribrain_list_claims) + readOnlyHint metadata
+      // 1. Exact 7 registered MCP tools (5 RFC-001 + PRG-1 veribrain_list_claims + PRG-3 veribrain_stats) + readOnlyHint metadata
       const listed = await client.listTools();
       const toolNames = listed.tools.map((t) => t.name).sort();
       expect(toolNames).toEqual([
@@ -213,6 +213,7 @@ describe("Gate 3 Golden Stdio MCP Verification (PM-304)", () => {
         "veribrain_list_claims",
         "veribrain_propose_scar",
         "veribrain_record_hypothesis",
+        "veribrain_stats",
         "veribrain_status",
       ]);
 
@@ -221,6 +222,8 @@ describe("Gate 3 Golden Stdio MCP Verification (PM-304)", () => {
       expect(byName.get("veribrain_get_claim")?.annotations?.readOnlyHint).toBe(true);
       expect(byName.get("veribrain_list_claims")?.annotations?.readOnlyHint).toBe(true);
       expect(byName.get("veribrain_list_claims")?.annotations?.idempotentHint).toBe(true);
+      expect(byName.get("veribrain_stats")?.annotations?.readOnlyHint).toBe(true);
+      expect(byName.get("veribrain_stats")?.annotations?.idempotentHint).toBe(true);
       expect(byName.get("veribrain_status")?.annotations?.readOnlyHint).toBe(true);
       expect(byName.get("veribrain_record_hypothesis")?.annotations?.readOnlyHint).toBe(false);
       expect(byName.get("veribrain_propose_scar")?.annotations?.readOnlyHint).toBe(false);

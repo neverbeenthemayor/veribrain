@@ -11,6 +11,7 @@ import {
   proposeScar,
   recordHypothesis,
 } from "../commands/mcp.js";
+import { formatStatsMarkdown, runStats } from "../commands/stats.js";
 import { compileContext, formatCompiledMarkdown } from "../compiler.js";
 import {
   sanitizeQuarantineClaimId,
@@ -29,7 +30,7 @@ import {
 
 export { printMcpClientConfig };
 
-const MCP_SERVER_VERSION = "1.2.0";
+const MCP_SERVER_VERSION = "1.3.0";
 
 export interface VeriBrainMcpServerOptions {
   brainDir?: string;
@@ -161,6 +162,7 @@ export function createVeriBrainMcpServer(options: VeriBrainMcpServerOptions = {}
         const compileOpts: CompileOptions = {
           role: args.role,
           env: args.env as EnvName,
+          metricSource: "mcp",
           brainDir,
           repoRoot,
         };
@@ -425,6 +427,47 @@ export function createVeriBrainMcpServer(options: VeriBrainMcpServerOptions = {}
           repoRoot,
         });
         return toMcpSuccess(result);
+      } catch (err) {
+        return toMcpError(err);
+      }
+    },
+  );
+
+  // 7. veribrain_stats (Read-Only)
+  server.registerTool(
+    "veribrain_stats",
+    {
+      title: "Inspect Local ROI & Token-Savings Telemetry",
+      description:
+        "Read-only local telemetry report summarizing compile counts, Zone A0 KV-cache reuse, and baseline doc token avoidance from opt-in .brain/.metrics.jsonl.",
+      inputSchema: {
+        since: z
+          .string()
+          .max(64)
+          .optional()
+          .describe('Optional lookback window ("24h", "7d", "30d", or "all"; default: "30d")'),
+        format: z
+          .enum(["json", "md"])
+          .optional()
+          .describe('Optional output mode; pass "md" to include rendered markdown'),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (args) => {
+      try {
+        const result = runStats({
+          ...(args.since !== undefined ? { since: args.since } : {}),
+          brainDir,
+          repoRoot,
+        });
+        const payload =
+          args.format === "md" ? { ...result, markdown: formatStatsMarkdown(result) } : result;
+        return toMcpSuccess(payload);
       } catch (err) {
         return toMcpError(err);
       }

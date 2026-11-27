@@ -108,6 +108,7 @@ export function generateRetroReport(options: RetroOptions = {}): RetroResult {
       brainDir,
       repoRoot,
       now,
+      recordMetrics: false,
     });
     const floorTokens =
       effectiveLayout === "split" ? compiled.zone_a0_tokens_est : compiled.zone_a_tokens_est;
