@@ -13,8 +13,17 @@ export type ExitCode =
   | typeof EXIT_PROVENANCE_VIOLATION;
 
 export const SCHEMA_VERSION = "1.0" as const;
+export const VALID_SCHEMA_VERSIONS = ["1.0", "1.1"] as const;
+export type SchemaVersion = (typeof VALID_SCHEMA_VERSIONS)[number];
 export const ESTIMATOR_VERSION = "utf8-3.5x1.15-v1" as const;
 export const ZONE_BOUNDARY_MARKER = "<!-- VERIBRAIN:ZONE_BOUNDARY:A_END -->" as const;
+export const ZONE_A0_BOUNDARY_MARKER = "<!-- VERIBRAIN:ZONE_BOUNDARY:A0_END -->" as const;
+
+export const VALID_ZONE_A_LAYOUTS = ["legacy", "split"] as const;
+export type ZoneALayout = (typeof VALID_ZONE_A_LAYOUTS)[number];
+
+export const VALID_OBSERVED_TTL_MODES = ["sha-pinned", "env-ttl"] as const;
+export type ObservedTtlMode = (typeof VALID_OBSERVED_TTL_MODES)[number];
 
 export const DEFAULT_CHARS_PER_TOKEN = 3.5;
 export const DEFAULT_SAFETY_MARGIN = 1.15;
@@ -23,6 +32,7 @@ export const MAX_SCARS_BYTES = 4096;
 export const MAX_SCAR_TTL_SECONDS = 30 * 24 * 60 * 60;
 export const MAX_HYPOTHESIS_TTL_SECONDS = 7 * 24 * 60 * 60;
 export const MAX_OBSERVED_TTL_SECONDS = 2_592_000;
+export const MAX_ENV_TTL_SECONDS = 7 * 24 * 60 * 60;
 export const KV_CACHE_MIN_FLOOR_TOKENS = 1024;
 
 export const VALID_PRIORITIES = ["P0", "P1", "P2"] as const;
@@ -57,7 +67,7 @@ export interface QuarantineConfig {
 }
 
 export interface BrainConfig {
-  schema_version: typeof SCHEMA_VERSION;
+  schema_version: SchemaVersion;
   estimator_version: string;
   chars_per_token: number;
   safety_margin: number;
@@ -66,6 +76,7 @@ export interface BrainConfig {
   quarantine: QuarantineConfig;
   semantic_keys?: Record<string, string | number | boolean>;
   mirror_dirs?: string[];
+  zone_a_layout?: ZoneALayout;
 }
 
 export interface DecidedRecord {
@@ -89,6 +100,7 @@ export interface ObservedRecord {
   git_sha: string;
   observed_at_utc: string;
   ttl_seconds: number;
+  ttl_mode?: ObservedTtlMode;
   issuer: Issuer;
   roles: string[];
   summary: string;
@@ -136,6 +148,7 @@ export interface CompileOptions {
   env: EnvName;
   gitSha?: string;
   maxTokens?: number;
+  zoneALayout?: ZoneALayout;
   brainDir?: string;
   repoRoot?: string;
   now?: Date;
@@ -144,20 +157,28 @@ export interface CompileOptions {
 }
 
 export interface CompileResult {
-  schema_version: typeof SCHEMA_VERSION;
+  schema_version: SchemaVersion;
   estimator_version: string;
   chars_per_token: number;
   safety_margin: number;
   role: string;
   env: EnvName;
   git_sha: string | null;
+  zone_a_layout: ZoneALayout;
   zone_a: string;
+  zone_a0: string;
+  zone_a1: string;
   zone_b: string;
   zone_a_sha256: string;
+  zone_a0_sha256: string;
   semantic_hash: string;
   zone_a_bytes: number;
+  zone_a0_bytes: number;
+  zone_a1_bytes: number;
   zone_b_bytes: number;
   zone_a_tokens_est: number;
+  zone_a0_tokens_est: number;
+  zone_a1_tokens_est: number;
   zone_b_tokens_est: number;
   total_tokens_est: number;
   max_tokens: number;
@@ -188,6 +209,7 @@ export interface ObserveOptions {
   env: EnvName;
   gitSha: string;
   ttlSeconds: number;
+  ttlMode?: ObservedTtlMode;
   summary: string;
   evidenceRef: string;
   issuer: string;
@@ -370,6 +392,149 @@ export interface HooksInstallResult {
   installed: string[];
   skipped: string[];
   ciYaml?: string;
+}
+
+export interface AttestTestOptions {
+  argv?: string[];
+  cmd?: string;
+  args?: string[];
+  claimId?: string;
+  env?: EnvName;
+  gitSha?: string;
+  ttlSeconds?: number;
+  ttlMode?: ObservedTtlMode;
+  roles?: string[];
+  priority?: Priority;
+  timeoutMs?: number;
+  dryRun?: boolean;
+  recordFailure?: boolean;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface AttestTestResult {
+  claim_id: string;
+  passed: boolean;
+  exit_code: number;
+  timed_out: boolean;
+  duration_ms: number;
+  env: EnvName;
+  git_sha: string;
+  ttl_seconds: number;
+  ttl_mode: ObservedTtlMode;
+  command: string;
+  output_sha256: string;
+  git_diff_stat_sha256: string;
+  evidence_ref: string;
+  summary: string;
+  recorded: boolean;
+  dry_run: boolean;
+  file_path: string | null;
+}
+
+export type CitationIssueKind =
+  | "missing_decided"
+  | "superseded_decided"
+  | "missing_observed"
+  | "expired_observed";
+
+export interface CitationIssue {
+  file: string;
+  line: number;
+  claim_id: string;
+  kind: CitationIssueKind;
+  detail: string;
+  replacement_id?: string;
+}
+
+export interface CheckCitationsOptions {
+  paths?: string[];
+  includeCodeBlocks?: boolean;
+  decidedOnly?: boolean;
+  ignoreIds?: string[];
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+}
+
+export interface CheckCitationsResult {
+  ok: boolean;
+  files_scanned: number;
+  citations_checked: number;
+  issues: CitationIssue[];
+  rendered: string;
+}
+
+export interface RetroRoleFloorAudit {
+  role: string;
+  zone_a_layout: ZoneALayout;
+  zone_a_tokens_est: number;
+  zone_a0_tokens_est: number;
+  zone_a_sha256: string;
+  zone_a0_sha256: string;
+  meets_floor: boolean;
+}
+
+export interface RetroExpiringItem {
+  tier: "OBSERVED" | "SCAR" | "HYPOTHESIS";
+  id: string;
+  expires_at_utc: string;
+  status: "expired" | "expiring_48h";
+  detail: string;
+}
+
+export interface RetroScarCheck {
+  scar_id: string;
+  regression_test: string;
+  test_exists: boolean;
+  expires_at_utc: string;
+  expired: boolean;
+}
+
+export interface RetroOptions {
+  since?: string;
+  env?: EnvName;
+  zoneALayout?: ZoneALayout;
+  roles?: string[];
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+}
+
+export interface RetroResult {
+  since: string;
+  env: EnvName;
+  zone_a_layout: ZoneALayout;
+  eval_ok: boolean;
+  eval_exit_code: ExitCode;
+  counts: {
+    decided: number;
+    observed: number;
+    hypotheses: number;
+    scars: number;
+    scars_bytes: number;
+    scars_max_bytes: number;
+  };
+  eval_issues: EvalIssue[];
+  role_floor_audit: RetroRoleFloorAudit[];
+  expiring_items: RetroExpiringItem[];
+  scar_checks: RetroScarCheck[];
+  recent_decided: Array<{
+    id: string;
+    priority: Priority;
+    status: DecidedStatus;
+    signed_by: string;
+    signed_at_utc: string;
+  }>;
+  pending_hypotheses: Array<{
+    id: string;
+    kind: string;
+    expires_at_utc: string;
+    promote_command: string;
+  }>;
+  markdown: string;
 }
 
 export interface VeriBrainErrorInit {

@@ -58,7 +58,7 @@ describe("CLI ergonomics and weekly 1-screen diff", () => {
   it("renders concise plain-ASCII global --help (<= 20 lines) and per-command <cmd> --help (<= 12 lines, <= 80 cols)", () => {
     const verRes = captureCli(["--version"]);
     expect(verRes.code).toBe(EXIT_OK);
-    expect(verRes.stdout).toBe("veribrain 1.1.0\n");
+    expect(verRes.stdout).toBe("veribrain 1.2.0\n");
 
     const res = captureCli(["--help"]);
     expect(res.code).toBe(EXIT_OK);
@@ -74,11 +74,14 @@ describe("CLI ergonomics and weekly 1-screen diff", () => {
       "init",
       "compile",
       "observe",
+      "attest-test",
       "decide",
       "sign",
       "promote",
       "eval",
+      "check-citations",
       "diff",
+      "retro",
       "lint-text",
       "hooks",
       "mcp",
@@ -190,7 +193,32 @@ describe("CLI ergonomics and weekly 1-screen diff", () => {
       expect(line.length).toBeLessThanOrEqual(80);
       expect(/^[\x20-\x7E]*$/.test(line)).toBe(true);
     }
-    expect(crowded.rendered).toContain("   Action: [Keep] [Revert] [Promote to DECIDED]");
+    expect(crowded.rendered).toContain("   Action: [Keep] [Renew] [Prune]");
+    expect(crowded.rendered).toContain(
+      "   Action: [Promote to DECIDED] [Promote to SCAR] [Discard]",
+    );
+    expect(crowded.rendered).toContain("   Action: [Re-verify] [Prune]");
+
+    // Verify [DEC] filename slug and decided tier-aware action line
+    const decRoot = makeTempDir();
+    initBrain({
+      repoRoot: decRoot,
+      signedBy: "Ian Mayor",
+      now: new Date("2026-11-27T09:00:00Z"),
+      envVars: {},
+    });
+    const decDiff = generateBrainDiff({
+      brainDir: path.join(decRoot, ".brain"),
+      repoRoot: decRoot,
+      since: "7d",
+      now: new Date("2026-11-28T09:00:00Z"),
+    });
+    expect(decDiff.rendered).toContain("[DEC] DEC-001 veribrain-baseline");
+    expect(decDiff.rendered).toContain("   Action: [Keep] [Revise] [Deprecate/Revert]");
+    for (const line of decDiff.rendered.trimEnd().split("\n")) {
+      expect(line.length).toBeLessThanOrEqual(80);
+      expect(/^[\x20-\x7E]*$/.test(line)).toBe(true);
+    }
   });
 
   it("enforces CUDE init receipt, pre-staging compile receipt, and redacted Exit 2/3/4 templates", () => {

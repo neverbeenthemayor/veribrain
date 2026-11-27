@@ -27,7 +27,7 @@ export interface QuarantineScanOptions {
 
 const PURE_PRINTABLE_ASCII_RE = /^[\t\n\r\x20-\x7E]*$/;
 const SAFE_CLAIM_ID_RE =
-  /^(?:(?:DEC|OBS|HYP|SCAR)-[A-Za-z0-9._-]{1,64}|config\.json|scars\.md|zone_b|diff|cli|compile|observe|init|eval|decide|sign|promote|lint-text|hooks|mcp|[A-Za-z0-9._-]{1,64}\.(?:md|json))$/;
+  /^(?:(?:DEC|OBS|HYP|SCAR)-[A-Za-z0-9._-]{1,64}|config\.json|scars\.md|zone_b|diff|cli|compile|observe|init|eval|decide|sign|promote|lint-text|hooks|mcp|attest-test|check-citations|retro|[A-Za-z0-9._-]{1,64}\.(?:md|json))$/;
 const SAFE_FIELD_NAME_RE = /^[A-Za-z0-9._-]{1,48}$/;
 
 const HASH_EXEMPT_FIELDS = new Set(["evidence_ref", "git_sha", "sha256_body", "zone_a_sha256"]);

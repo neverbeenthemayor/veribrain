@@ -1,13 +1,14 @@
 # VeriBrain — Design, CLI DX & Build-in-Public Strategy (CUDE)
 
-- **Owner:** Chief User Design Engineer (CUDE) · **Baseline Date:** `2026-11-25`
-- **Primary Surfaces:** Terminal CLI UX (`veribrain init / compile / eval / diff / observe`), Machine-Readable Context Output (`Zone A` + `Zone B`), and Tier 1 Build-in-Public Publishing (`gdocs` Engineering Blog + `gslides` 10-Slide Benchmark Talk Deck).
+- **Owner:** Chief User Design Engineer (CUDE) · **Baseline Date:** `2026-11-27` (`v1.2.0` / `PRG-2`)
+- **Primary Surfaces:** Terminal CLI UX (`veribrain init / compile / eval / diff / retro / observe / attest-test / check-citations`), Machine-Readable Context Output (`Zone A0`+`A1` & `Zone B`), and Tier 1 Build-in-Public Publishing (`gdocs` Engineering Blog + `gslides` 10-Slide Benchmark Talk Deck + Launch Announcement Kit).
 
-## 1. CLI & Weekly Brain Diff Ergonomics
-- **Zero Rubber-Stamp Fatigue (`veribrain diff`):** Strictly capped at **`<= 5` plain-English bullets** and **`<= 25` terminal lines** total (`80`-column clean wrapping, zero ASCII art bloat). Every item ends with an explicit action (`[Keep]`, `[Revert]`, or `[Promote to DECIDED]`).
-- **Explainable Citations:** Every factual assertion in Zone B prints a scannable 1-line provenance footer: `Based on: <claim_id> (<env>@<sha>)`.
-- **Fail-Closed Error Messages:** Quarantine (`exit 2`) and token-budget (`exit 3`) failures state the exact `claim_id`, rule broken, and 1-command fix — never echoing raw secrets or opaque stack traces.
+## 1. CLI, Diff & Weekly Retro Ergonomics
+- **Zero Rubber-Stamp Fatigue (`veribrain diff`):** Strictly capped at **`<= 5` plain-English bullets** and **`<= 25` terminal lines** total (`<= 80`-column clean wrapping, plain ASCII). Actions are **tier-aware**: `[DEC]` (with concise title/slug) shows `[Keep] [Revise] [Deprecate/Revert]`, `[HYP]` shows `[Promote to DECIDED] [Promote to SCAR] [Discard]`, `[OBS]` shows `[Re-verify] [Prune]`, and `[SCAR]` shows `[Keep] [Renew] [Prune]`.
+- **Uncapped Deep Audit (`veribrain retro`):** Outputs structured plain-ASCII Markdown/JSON covering health/`eval --strict`, 8-role `>= 1,024`-token KV-cache floor readiness, expiring `48h` items, `scars.md` test-link verification, and copy-pasteable `veribrain promote` hints.
+- **Explainable Citations & Zero-Drift Docs:** Zone B assertions print `Based on: <claim_id> (<env>@<sha>)` (plus `, env-ttl` for bounded cross-commit observations); `veribrain check-citations` catches missing/superseded doc IDs deterministically.
+- **Fail-Closed Error Messages:** Quarantine (`exit 2`), token-budget (`exit 3`), and provenance (`exit 4`) failures state exact rule + 1-command fix cleanly without leaking raw secrets or child stdout/stderr.
 
 ## 2. Tier 1 Build-in-Public Visual Standards (`gdocs` / `gslides`)
-- **Voice Standard:** Direct, honest, engineer-to-engineer prose — zero AI-hype buzzwords, zero fabricated charts.
-- **Deck Clarity (`docs/blog-outline-veribrain.md`):** 10-slide ceiling, max 1 core chart or architecture diagram per slide, high-contrast WCAG-legible typography, all metrics annotated with exact Stage 1 / Stage 2 test conditions.
+- **Voice Standard:** Direct, verified, engineer-to-engineer prose — zero AI-hype buzzwords, all quickstart snippets & metrics verified (`v1.1.0` public Blog Doc, 10-Slide Deck, and Announcement Kit).
+- **Deck Clarity (`docs/blog-outline-veribrain.md`):** 10-slide ceiling, max 1 core chart or architecture diagram per slide, high-contrast WCAG-legible typography, all metrics annotated with exact test conditions.

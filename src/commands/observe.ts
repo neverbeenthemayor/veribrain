@@ -1,5 +1,14 @@
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  realpathSync,
+  renameSync,
+  type Stats,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { normalizeLf } from "../normalize.js";
 import { assertQuarantineClean } from "../quarantine.js";
@@ -8,9 +17,12 @@ import {
   INVALID_ENV_FIX_HINT,
   invalidateFileReadCache,
   isAgentEnvironment,
+  isBlockedSystemOrIsolationPath,
+  isUncOrDevicePath,
   isValidEnv,
   isValidGitSha,
   isValidIssuer,
+  isValidObservedTtlMode,
   isValidObsId,
   isValidPriority,
   loadBrainConfig,
@@ -20,14 +32,106 @@ import {
 import {
   EXIT_ERROR,
   EXIT_PROVENANCE_VIOLATION,
+  MAX_ENV_TTL_SECONDS,
   MAX_OBSERVED_TTL_SECONDS,
   type ObservedRecord,
+  type ObservedTtlMode,
   type ObserveOptions,
   type ObserveResult,
   type Priority,
   type QuarantineConfig,
   VeriBrainError,
 } from "../types.js";
+
+function assertObservedDirConfinement(brainDir: string, claimId: string): string {
+  const resolvedBrainDir = path.resolve(brainDir);
+  if (isUncOrDevicePath(resolvedBrainDir) || isBlockedSystemOrIsolationPath(resolvedBrainDir)) {
+    throw new VeriBrainError({
+      exitCode: EXIT_PROVENANCE_VIOLATION,
+      code: "PROVENANCE_VIOLATION",
+      claimId,
+      rule: "path_confinement_violation",
+      detail: ".brain directory points to a forbidden UNC, device, system, or isolated path.",
+      fix: "Use a local repo-confined .brain directory.",
+    });
+  }
+
+  let brainStat: Stats | null = null;
+  try {
+    brainStat = lstatSync(resolvedBrainDir);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw err;
+    }
+  }
+  if (brainStat !== null) {
+    if (brainStat.isSymbolicLink() || !brainStat.isDirectory()) {
+      throw new VeriBrainError({
+        exitCode: EXIT_PROVENANCE_VIOLATION,
+        code: "PROVENANCE_VIOLATION",
+        claimId,
+        rule: "path_confinement_violation",
+        detail: ".brain/ must be a real non-symlink directory.",
+        fix: "Replace symlinked .brain with a real directory.",
+      });
+    }
+  } else {
+    mkdirSync(resolvedBrainDir, { recursive: true });
+  }
+
+  const observedDir = path.resolve(resolvedBrainDir, "observed");
+  let obsStat: Stats | null = null;
+  try {
+    obsStat = lstatSync(observedDir);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw err;
+    }
+  }
+  if (obsStat !== null) {
+    if (obsStat.isSymbolicLink() || !obsStat.isDirectory()) {
+      throw new VeriBrainError({
+        exitCode: EXIT_PROVENANCE_VIOLATION,
+        code: "PROVENANCE_VIOLATION",
+        claimId,
+        rule: "path_confinement_violation",
+        detail: ".brain/observed/ cannot be a symbolic link.",
+        fix: "Replace symlinked .brain/observed with a real directory.",
+      });
+    }
+  } else {
+    mkdirSync(observedDir, { recursive: true });
+  }
+
+  const realBrain = realpathSync(resolvedBrainDir);
+  const realObserved = realpathSync(observedDir);
+  if (isBlockedSystemOrIsolationPath(realBrain) || isBlockedSystemOrIsolationPath(realObserved)) {
+    throw new VeriBrainError({
+      exitCode: EXIT_PROVENANCE_VIOLATION,
+      code: "PROVENANCE_VIOLATION",
+      claimId,
+      rule: "path_confinement_violation",
+      detail: ".brain/observed/ resolved to a forbidden system or isolated path.",
+      fix: "Use a local repo-confined .brain/observed/ directory.",
+    });
+  }
+  const expected = path.join(realBrain, "observed");
+  const isWin = process.platform === "win32";
+  if (
+    (isWin ? realObserved.toLowerCase() : realObserved) !==
+    (isWin ? expected.toLowerCase() : expected)
+  ) {
+    throw new VeriBrainError({
+      exitCode: EXIT_PROVENANCE_VIOLATION,
+      code: "PROVENANCE_VIOLATION",
+      claimId,
+      rule: "path_confinement_violation",
+      detail: ".brain/observed/ must resolve strictly inside .brain/.",
+      fix: "Use a local .brain/observed/ directory.",
+    });
+  }
+  return realObserved;
+}
 
 export function writeObservation(options: ObserveOptions): ObserveResult {
   const envVars = options.envVars ?? process.env;
@@ -124,6 +228,31 @@ export function writeObservation(options: ObserveOptions): ObserveResult {
     });
   }
 
+  let ttlMode: ObservedTtlMode | undefined;
+  if (options.ttlMode !== undefined) {
+    if (!isValidObservedTtlMode(options.ttlMode)) {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "CLI_ERROR",
+        claimId,
+        rule: "invalid_ttl_mode",
+        detail: "--ttl-mode must be sha-pinned or env-ttl.",
+        fix: "Pass --ttl-mode sha-pinned|env-ttl.",
+      });
+    }
+    ttlMode = options.ttlMode;
+    if (ttlMode === "env-ttl" && options.ttlSeconds > MAX_ENV_TTL_SECONDS) {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "CLI_ERROR",
+        claimId,
+        rule: "env_ttl_exceeded",
+        detail: `env-ttl observations cap --ttl at ${MAX_ENV_TTL_SECONDS}s (7 days).`,
+        fix: `Pass --ttl <= ${MAX_ENV_TTL_SECONDS} or use --ttl-mode sha-pinned.`,
+      });
+    }
+  }
+
   const summary = options.summary.trim();
   if (summary.length === 0) {
     throw new VeriBrainError({
@@ -172,6 +301,20 @@ export function writeObservation(options: ObserveOptions): ObserveResult {
     });
   }
 
+  for (const raw of [options.brainDir, options.repoRoot]) {
+    if (raw !== undefined && (isUncOrDevicePath(raw) || isBlockedSystemOrIsolationPath(raw))) {
+      throw new VeriBrainError({
+        exitCode: EXIT_PROVENANCE_VIOLATION,
+        code: "PROVENANCE_VIOLATION",
+        claimId,
+        rule: "path_confinement_violation",
+        detail:
+          "Observation target path points to a forbidden UNC, device, system, or isolated path.",
+        fix: "Use a local repo-confined .brain directory.",
+      });
+    }
+  }
+
   const { brainDir } = resolveBrainPaths(options.brainDir, options.repoRoot, {
     allowWorktreeFallback: false,
   });
@@ -192,7 +335,7 @@ export function writeObservation(options: ObserveOptions): ObserveResult {
   }
 
   const observedAtUtc = (options.now ?? new Date()).toISOString().replace(/\.\d{3}Z$/, "Z");
-  const observedDir = path.resolve(brainDir, "observed");
+  const observedDir = assertObservedDirConfinement(brainDir, claimId);
   const finalPath = path.resolve(observedDir, `${claimId}.json`);
   if (path.dirname(finalPath) !== observedDir || path.basename(finalPath) !== `${claimId}.json`) {
     throw new VeriBrainError({
@@ -204,6 +347,25 @@ export function writeObservation(options: ObserveOptions): ObserveResult {
       fix: "Use a plain OBS-* claim_id without path separators.",
     });
   }
+  try {
+    if (lstatSync(finalPath).isSymbolicLink()) {
+      throw new VeriBrainError({
+        exitCode: EXIT_PROVENANCE_VIOLATION,
+        code: "PROVENANCE_VIOLATION",
+        claimId,
+        rule: "path_confinement_violation",
+        detail: "Target observed file cannot be a symbolic link.",
+        fix: "Remove symlinked file inside .brain/observed/ before writing.",
+      });
+    }
+  } catch (err) {
+    if (err instanceof VeriBrainError) {
+      throw err;
+    }
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw err;
+    }
+  }
 
   const payloadObj = {
     claim_id: claimId,
@@ -211,6 +373,7 @@ export function writeObservation(options: ObserveOptions): ObserveResult {
     git_sha: gitSha,
     observed_at_utc: observedAtUtc,
     ttl_seconds: options.ttlSeconds,
+    ...(ttlMode !== undefined ? { ttl_mode: ttlMode } : {}),
     issuer,
     roles,
     priority,
@@ -236,10 +399,6 @@ export function writeObservation(options: ObserveOptions): ObserveResult {
     allowlistedLineTokens,
     allowHashRefLineNumbers,
   });
-
-  if (!existsSync(observedDir)) {
-    mkdirSync(observedDir, { recursive: true });
-  }
 
   const tmpName = `.tmp-${claimId}-${process.pid}-${randomBytes(6).toString("hex")}.json`;
   const tmpPath = path.join(observedDir, tmpName);

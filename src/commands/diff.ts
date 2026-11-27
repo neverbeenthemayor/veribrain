@@ -19,6 +19,7 @@ import {
   stripHtmlCommentsPreservingLines,
 } from "../schema.js";
 import {
+  type DiffCategory,
   type DiffItem,
   type DiffOptions,
   type DiffResult,
@@ -32,8 +33,32 @@ const SINCE_RE = /^(\d+)([dh])$/i;
 const MAX_DIFF_BULLETS = 5;
 const MAX_DIFF_LINES = 25;
 const MAX_COLS = 80;
-const ACTION_LINE = "   Action: [Keep] [Revert] [Promote to DECIDED]";
 const NEXT_LINE = "Next: edit .brain/ then run veribrain eval --strict.";
+
+function actionLineForCategory(category: DiffCategory): string {
+  switch (category) {
+    case "decided":
+      return "   Action: [Keep] [Revise] [Deprecate/Revert]";
+    case "hypothesis":
+      return "   Action: [Promote to DECIDED] [Promote to SCAR] [Discard]";
+    case "observed":
+      return "   Action: [Re-verify] [Prune]";
+    case "scar":
+      return "   Action: [Keep] [Renew] [Prune]";
+  }
+}
+
+function deriveDecidedSlug(filePath: string, decId: string, title?: string): string {
+  if (title && title.trim().length > 0) {
+    return title.trim().slice(0, 32);
+  }
+  const base = path.basename(filePath, ".md");
+  const prefix = `${decId}-`;
+  if (base.startsWith(prefix) && base.length > prefix.length) {
+    return base.slice(prefix.length).slice(0, 32);
+  }
+  return "";
+}
 
 export function parseSinceWindowMs(since: string): number {
   const trimmed = since.trim();
@@ -235,7 +260,8 @@ export function generateBrainDiff(options: DiffOptions = {}): DiffResult {
     pendingHypCount += 1;
     const expMs = parseIsoTimestampMs(hyp.expires_at_utc) ?? 0;
     const statusLabel = nowMs > expMs ? "expired" : `expires ${hyp.expires_at_utc.slice(0, 10)}`;
-    const tag = hyp.kind === "scar_proposal" ? "[HYP/SCAR]" : "[HYP]";
+    const tag =
+      hyp.kind === "scar_proposal" || hyp.kind === "hypothesis_scar" ? "[HYP/SCAR]" : "[HYP]";
     items.push({
       category: "hypothesis",
       rank: 2,
@@ -272,11 +298,13 @@ export function generateBrainDiff(options: DiffOptions = {}): DiffResult {
       if (inWindow || dec.status === "superseded") {
         const tag =
           dec.status === "superseded" ? "superseded" : `signed ${dec.signed_at_utc.slice(0, 10)}`;
+        const slug = deriveDecidedSlug(file, dec.id, dec.title);
+        const slugPart = slug.length > 0 ? ` ${slug}` : "";
         items.push({
           category: "decided",
           rank: 4,
           id: dec.id,
-          summary: `[DEC] ${dec.id} (${dec.priority}, ${tag}) by ${dec.signed_by}`,
+          summary: `[DEC] ${dec.id}${slugPart} (${dec.priority}, ${tag}) by ${dec.signed_by}`,
         });
       }
     } catch (err) {
@@ -328,7 +356,7 @@ export function generateBrainDiff(options: DiffOptions = {}): DiffResult {
       const prefix = `${i + 1}. `;
       const headline = `${prefix}${truncateAscii(item.summary, MAX_COLS - prefix.length)}`;
       renderedLines.push(headline);
-      renderedLines.push(ACTION_LINE);
+      renderedLines.push(actionLineForCategory(item.category));
     }
     if (totalCount > visible.length) {
       const hidden = totalCount - visible.length;

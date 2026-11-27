@@ -12,6 +12,7 @@ import {
   INVALID_ENV_FIX_HINT,
   isValidEnv,
   isValidGitSha,
+  isValidZoneALayout,
   loadBrain,
   parseIsoTimestampMs,
   resolveWorktreeHeadSha,
@@ -28,14 +29,17 @@ import {
   type ObservedRecord,
   priorityRank,
   type QuarantineConfig,
-  SCHEMA_VERSION,
   type ScarRecord,
+  type SchemaVersion,
   VeriBrainError,
+  ZONE_A0_BOUNDARY_MARKER,
   ZONE_BOUNDARY_MARKER,
+  type ZoneALayout,
 } from "./types.js";
 
 const VALID_ROLE_RE = /^[A-Za-z0-9._-]{1,64}$/;
 const BOUNDARY_OVERHEAD = `${ZONE_BOUNDARY_MARKER}\n\n`;
+const ZONE_A0_BOUNDARY_OVERHEAD = `${ZONE_A0_BOUNDARY_MARKER}\n\n`;
 
 function matchesRole(roles: readonly string[], role: string): boolean {
   return roles.includes(role) || roles.includes("*");
@@ -45,24 +49,42 @@ function buildSemanticHash(
   config: BrainConfig,
   role: string,
   activeDecided: readonly DecidedRecord[],
+  zoneALayout: ZoneALayout,
 ): string {
-  const payload = {
-    schema_version: config.schema_version,
-    role,
-    semantic_keys: config.semantic_keys ?? {},
-    decided: activeDecided.map((record) => ({
-      id: record.id,
-      priority: record.priority,
-      sha256_body: record.sha256_body,
-    })),
-  };
+  const payload =
+    zoneALayout === "split"
+      ? {
+          schema_version: config.schema_version,
+          zone_a_layout: "split" as const,
+          role,
+          semantic_keys: config.semantic_keys ?? {},
+          decided: activeDecided.map((record) => ({
+            id: record.id,
+            priority: record.priority,
+            sha256_body: record.sha256_body,
+          })),
+        }
+      : {
+          schema_version: config.schema_version,
+          role,
+          semantic_keys: config.semantic_keys ?? {},
+          decided: activeDecided.map((record) => ({
+            id: record.id,
+            priority: record.priority,
+            sha256_body: record.sha256_body,
+          })),
+        };
   return sha256Hex(canonicalJsonStringify(payload));
 }
 
-function renderZoneA(role: string, activeDecided: readonly DecidedRecord[]): string {
+function renderZoneA(
+  schemaVersion: SchemaVersion,
+  role: string,
+  activeDecided: readonly DecidedRecord[],
+): string {
   const lines: string[] = [
     "# VeriBrain Context - Zone A (Static Prefix)",
-    `schema_version: ${SCHEMA_VERSION}`,
+    `schema_version: ${schemaVersion}`,
     `role: ${role}`,
     "",
     "## Role Contract",
@@ -76,6 +98,57 @@ function renderZoneA(role: string, activeDecided: readonly DecidedRecord[]): str
     lines.push("_No active DECIDED rules for this role._");
   } else {
     for (const record of activeDecided) {
+      lines.push(`### [${record.priority}] ${record.id}`);
+      lines.push(record.body);
+      lines.push(`Based on: ${record.id} (sha256:${record.sha256_body.slice(0, 12)})`);
+      lines.push("");
+    }
+  }
+
+  return `${normalizeText(lines.join("\n")).trimEnd()}\n\n`;
+}
+
+function renderZoneA0(
+  schemaVersion: SchemaVersion,
+  sharedDecided: readonly DecidedRecord[],
+): string {
+  const lines: string[] = [
+    "# VeriBrain Context - Zone A0 (Shared Constitutional Prefix)",
+    `schema_version: ${schemaVersion}`,
+    "Trust Hierarchy: DECIDED (Tier 1) > OBSERVED (Tier 2) > untrusted_hint (Tier 3, non-authoritative).",
+    "",
+    "## Shared Decided Rules (All Roles)",
+  ];
+
+  if (sharedDecided.length === 0) {
+    lines.push("_No shared DECIDED rules._");
+  } else {
+    for (const record of sharedDecided) {
+      lines.push(`### [${record.priority}] ${record.id}`);
+      lines.push(record.body);
+      lines.push(`Based on: ${record.id} (sha256:${record.sha256_body.slice(0, 12)})`);
+      lines.push("");
+    }
+  }
+
+  return `${normalizeText(lines.join("\n")).trimEnd()}\n\n`;
+}
+
+function renderZoneA1(role: string, roleDecided: readonly DecidedRecord[]): string {
+  const lines: string[] = [
+    "# VeriBrain Context - Zone A1 (Role Delta)",
+    `role: ${role}`,
+    "",
+    "## Role Contract",
+    `Role: ${role}`,
+    "",
+    "## Role-Specific Decided Rules",
+  ];
+
+  if (roleDecided.length === 0) {
+    lines.push("_No role-specific DECIDED rules._");
+  } else {
+    for (const record of roleDecided) {
       lines.push(`### [${record.priority}] ${record.id}`);
       lines.push(record.body);
       lines.push(`Based on: ${record.id} (sha256:${record.sha256_body.slice(0, 12)})`);
@@ -108,7 +181,11 @@ function renderZoneB(
       lines.push(`### ${item.claim_id}`);
       lines.push(item.summary);
       lines.push(`Evidence: ${item.evidence_ref}`);
-      lines.push(`Based on: ${item.claim_id} (${item.env}@${item.git_sha})`);
+      const citationScope =
+        (item.ttl_mode ?? "sha-pinned") === "env-ttl"
+          ? `${item.env}@${item.git_sha}, env-ttl`
+          : `${item.env}@${item.git_sha}`;
+      lines.push(`Based on: ${item.claim_id} (${citationScope})`);
       lines.push("");
       blocks += 1;
     }
@@ -225,6 +302,17 @@ export function compileContext(options: CompileOptions): CompileResult {
     });
   }
 
+  if (options.zoneALayout !== undefined && !isValidZoneALayout(options.zoneALayout)) {
+    throw new VeriBrainError({
+      exitCode: EXIT_ERROR,
+      code: "CLI_ERROR",
+      claimId: "compile",
+      rule: "invalid_zone_a_layout",
+      detail: "Compile --zone-a-layout must be legacy or split.",
+      fix: "Pass --zone-a-layout legacy|split.",
+    });
+  }
+
   const now = options.now ?? new Date();
   const brain = loadBrain(options.brainDir, options.repoRoot, {
     now,
@@ -234,6 +322,11 @@ export function compileContext(options: CompileOptions): CompileResult {
       : {}),
   });
   const { config } = brain;
+  const zoneALayout: ZoneALayout =
+    options.zoneALayout ??
+    config.zone_a_layout ??
+    (config.schema_version === "1.1" ? "split" : "legacy");
+
   const maxTokens = options.maxTokens ?? config.default_max_tokens;
   if (!Number.isInteger(maxTokens) || maxTokens <= 0) {
     throw new VeriBrainError({
@@ -259,17 +352,70 @@ export function compileContext(options: CompileOptions): CompileResult {
       return compareAscii(a.id, b.id);
     });
 
-  const semanticHash = buildSemanticHash(config, role, activeDecided);
-  const zoneA = renderZoneA(role, activeDecided);
-  const zoneABytes = Buffer.byteLength(zoneA, "utf8");
-  const zoneASha256 = sha256Hex(Buffer.from(zoneA, "utf8"));
-  const zoneABlocks = 1 + activeDecided.length;
-  const zoneATokensEst = estimateTokens(
-    zoneA,
-    zoneABlocks,
-    config.chars_per_token,
-    config.safety_margin,
-  );
+  const semanticHash = buildSemanticHash(config, role, activeDecided, zoneALayout);
+
+  let zoneA: string;
+  let zoneA0: string;
+  let zoneA1: string;
+  let zoneABytes: number;
+  let zoneA0Bytes: number;
+  let zoneA1Bytes: number;
+  let zoneASha256: string;
+  let zoneA0Sha256: string;
+  let zoneATokensEst: number;
+  let zoneA0TokensEst: number;
+  let zoneA1TokensEst: number;
+
+  if (zoneALayout === "split") {
+    const sharedDecided = activeDecided.filter((d) => d.roles.includes("*"));
+    const roleDecided = activeDecided.filter((d) => !d.roles.includes("*"));
+    zoneA0 = renderZoneA0(config.schema_version, sharedDecided);
+    zoneA1 = renderZoneA1(role, roleDecided);
+    zoneA = `${zoneA0}${ZONE_A0_BOUNDARY_OVERHEAD}${zoneA1}`;
+    zoneA0Bytes = Buffer.byteLength(zoneA0, "utf8");
+    zoneA1Bytes = Buffer.byteLength(zoneA1, "utf8");
+    zoneABytes = Buffer.byteLength(zoneA, "utf8");
+    zoneA0Sha256 = sha256Hex(Buffer.from(zoneA0, "utf8"));
+    zoneASha256 = sha256Hex(Buffer.from(zoneA, "utf8"));
+    const zoneA0Blocks = 1 + sharedDecided.length;
+    const zoneA1Blocks = 1 + roleDecided.length;
+    zoneA0TokensEst = estimateTokens(
+      zoneA0,
+      zoneA0Blocks,
+      config.chars_per_token,
+      config.safety_margin,
+    );
+    zoneA1TokensEst = estimateTokens(
+      zoneA1,
+      zoneA1Blocks,
+      config.chars_per_token,
+      config.safety_margin,
+    );
+    zoneATokensEst = estimateTokens(
+      zoneA,
+      zoneA0Blocks + zoneA1Blocks,
+      config.chars_per_token,
+      config.safety_margin,
+    );
+  } else {
+    zoneA = renderZoneA(config.schema_version, role, activeDecided);
+    zoneABytes = Buffer.byteLength(zoneA, "utf8");
+    zoneASha256 = sha256Hex(Buffer.from(zoneA, "utf8"));
+    const zoneABlocks = 1 + activeDecided.length;
+    zoneATokensEst = estimateTokens(
+      zoneA,
+      zoneABlocks,
+      config.chars_per_token,
+      config.safety_margin,
+    );
+    zoneA0 = zoneA;
+    zoneA1 = "";
+    zoneA0Bytes = zoneABytes;
+    zoneA1Bytes = 0;
+    zoneA0Sha256 = zoneASha256;
+    zoneA0TokensEst = zoneATokensEst;
+    zoneA1TokensEst = 0;
+  }
 
   const blockingDecidedIds = activeDecided
     .filter((d) => d.priority === "P0" || d.priority === "P1" || pinnedSet.has(d.id))
@@ -299,7 +445,9 @@ export function compileContext(options: CompileOptions): CompileResult {
     const observedMs = parseIsoTimestampMs(obs.observed_at_utc) ?? 0;
     const isExpired = nowMs > observedMs + obs.ttl_seconds * 1000;
     const envMismatch = obs.env !== options.env;
-    const shaMismatch = gitSha !== null && obs.git_sha.toLowerCase() !== gitSha.toLowerCase();
+    const isEnvTtl = (obs.ttl_mode ?? "sha-pinned") === "env-ttl";
+    const shaMismatch =
+      !isEnvTtl && gitSha !== null && obs.git_sha.toLowerCase() !== gitSha.toLowerCase();
     if (isExpired || envMismatch || shaMismatch) {
       excludedStaleSet.add(obs.claim_id);
       continue;
@@ -468,26 +616,38 @@ export function compileContext(options: CompileOptions): CompileResult {
   const sortedEvictedIds = [...evictedIds].sort(compareAscii);
   const excludedStaleIds = [...excludedStaleSet].sort(compareAscii);
   const kvCacheFloorAdvisory =
-    zoneATokensEst < KV_CACHE_MIN_FLOOR_TOKENS
-      ? `Zone A (${zoneATokensEst} est. tokens) is below ${KV_CACHE_MIN_FLOOR_TOKENS}-token provider KV-cache floor.`
-      : null;
+    zoneALayout === "split"
+      ? zoneA0TokensEst < KV_CACHE_MIN_FLOOR_TOKENS
+        ? `Zone A0 (${zoneA0TokensEst} est. tokens) is below ${KV_CACHE_MIN_FLOOR_TOKENS}-token provider KV-cache floor.`
+        : null
+      : zoneATokensEst < KV_CACHE_MIN_FLOOR_TOKENS
+        ? `Zone A (${zoneATokensEst} est. tokens) is below ${KV_CACHE_MIN_FLOOR_TOKENS}-token provider KV-cache floor.`
+        : null;
   const compileMs = Number((performance.now() - startMs).toFixed(3));
 
   return {
-    schema_version: SCHEMA_VERSION,
+    schema_version: config.schema_version,
     estimator_version: config.estimator_version,
     chars_per_token: config.chars_per_token,
     safety_margin: config.safety_margin,
     role,
     env: options.env,
     git_sha: gitSha,
+    zone_a_layout: zoneALayout,
     zone_a: zoneA,
+    zone_a0: zoneA0,
+    zone_a1: zoneA1,
     zone_b: zoneBRendered.text,
     zone_a_sha256: zoneASha256,
+    zone_a0_sha256: zoneA0Sha256,
     semantic_hash: semanticHash,
     zone_a_bytes: zoneABytes,
+    zone_a0_bytes: zoneA0Bytes,
+    zone_a1_bytes: zoneA1Bytes,
     zone_b_bytes: zoneBBytes,
     zone_a_tokens_est: zoneATokensEst,
+    zone_a0_tokens_est: zoneA0TokensEst,
+    zone_a1_tokens_est: zoneA1TokensEst,
     zone_b_tokens_est: zoneBTokensEst,
     total_tokens_est: totalTokensEst,
     max_tokens: maxTokens,

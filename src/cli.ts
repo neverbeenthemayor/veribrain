@@ -2,6 +2,8 @@
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { attestTest } from "./commands/attest-test.js";
+import { checkCitations } from "./commands/check-citations.js";
 import { decideRule, signDecidedFile } from "./commands/decide.js";
 import { generateBrainDiff } from "./commands/diff.js";
 import { evaluateBrain } from "./commands/eval.js";
@@ -11,11 +13,21 @@ import { lintTextFile } from "./commands/lint-text.js";
 import { printMcpClientConfig } from "./commands/mcp.js";
 import { writeObservation } from "./commands/observe.js";
 import { promoteHypothesis } from "./commands/promote.js";
+import { generateRetroReport } from "./commands/retro.js";
 import { compileContext, formatCompiledMarkdown } from "./compiler.js";
 import { truncateAscii, wrapAsciiLines } from "./normalize.js";
 import { scanTextForQuarantine } from "./quarantine.js";
-import { INVALID_ENV_FIX_HINT, isAgentEnvironment, isValidEnv, isValidPriority } from "./schema.js";
 import {
+  INVALID_ENV_FIX_HINT,
+  isAgentEnvironment,
+  isValidEnv,
+  isValidObservedTtlMode,
+  isValidPriority,
+  isValidZoneALayout,
+} from "./schema.js";
+import {
+  type AttestTestOptions,
+  type CheckCitationsOptions,
   type CompileOptions,
   type DecideOptions,
   type DiffOptions,
@@ -30,33 +42,36 @@ import {
   type HooksInstallOptions,
   type InitOptions,
   type LintTextOptions,
+  type ObservedTtlMode,
   type ObserveOptions,
   type Priority,
   type PromoteOptions,
+  type RetroOptions,
   type SignOptions,
   VeriBrainError,
+  type ZoneALayout,
 } from "./types.js";
 
-const CLI_VERSION = "1.1.0";
+const CLI_VERSION = "1.2.0";
 const MAX_COLS = 80;
 
 const HELP_TEXT = [
   `veribrain v${CLI_VERSION} - Deterministic provenance-verified context compiler`,
-  "",
-  "Usage: veribrain <command> [options]",
+  "Usage: veribrain <command> [options]   (use `<cmd> --help` for flags)",
   "",
   "Commands:",
-  "  init       Scaffold .brain/ store [--signed-by <human>]",
-  "  compile    Build Zone A + Zone B [--role <r> --env <e> --format md|json]",
-  "  observe    Record CI/hook fact [--claim-id --env --git-sha --ttl ...]",
-  "  decide     Author & sign DEC-* rule [--id --priority --signed-by ...]",
-  "  sign       Re-sign .brain/decided/<file>.md & sync mirrors",
-  "  promote    Promote HYP-* to scars.md or DEC-* [--to scar|decided]",
-  "  eval       Run $0 schema, quarantine & mirror checks [--strict]",
-  "  diff       Show 1-screen weekly review digest [--since 7d]",
-  "  lint-text  Dry-run quarantine check on any file [--format text|json]",
-  "  hooks      Install Git hooks or print CI YAML [install --print-ci]",
-  "  mcp        Run stdio MCP server (6 tools) [--print-config <client>]",
+  "  init             Scaffold .brain/ store [--signed-by <human>]",
+  "  compile          Build Zone A/A0+A1 + Zone B [--role --env --zone-a-layout]",
+  "  observe          Record CI/hook fact [--claim-id --env --ttl-mode ...]",
+  "  attest-test      Run test command & emit OBS-VERIFY-* [-- <cmd> | --cmd]",
+  "  decide / sign    Author or re-sign DEC-* rules & sync mirrors (human)",
+  "  promote          Promote HYP-* to scars.md or DEC-* [--to scar|decided]",
+  "  eval             Run $0 schema, quarantine & mirror checks [--strict]",
+  "  check-citations  Audit docs for missing/superseded DEC-*/OBS-* citations",
+  "  diff / retro     Weekly 1-screen diff or uncapped retro digest [--since 7d]",
+  "  lint-text        Dry-run quarantine check on any file [--format text|json]",
+  "  hooks            Install Git hooks or print CI YAML [install --print-ci]",
+  "  mcp              Run stdio MCP server (6 tools) [--print-config <client>]",
   "",
   "Options: --brain-dir/--brain <p> | --repo-root <p> | --help | --version",
   "Exits:   0 ok | 1 error/eval | 2 quarantine | 3 budget | 4 provenance",
@@ -78,7 +93,7 @@ const SUBCOMMAND_HELP: Record<string, string> = {
   compile: [
     "Usage: veribrain compile --role <r> --env <e> [options]",
     "",
-    "Compile byte-frozen Zone A prefix + uncached Zone B cited tail.",
+    "Compile byte-frozen Zone A/A0+A1 prefix + uncached Zone B cited tail.",
     "",
     "Required:",
     "  --role <role>         Target role id (^[A-Za-z0-9._-]{1,64}$)",
@@ -86,6 +101,7 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "Optional:",
     "  --git-sha <hex|HEAD>  Filter observed facts by 7-40 hex SHA or HEAD",
     "  --max-tokens <n>      Token cap (fail closed exit 3 if infeasible)",
+    "  --zone-a-layout <m>   legacy | split (Zone A0 shared + Zone A1 delta)",
     "  --format <md|json>    Output format (default: md)",
     "",
   ].join("\n"),
@@ -94,14 +110,29 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "                         --ttl <sec> --summary <txt> --evidence <ref>",
     "                         --issuer <ci|git-hook|verifier-script>",
     "",
-    "Required:",
     "  --claim-id <OBS-*>    Observation identifier (OBS-*)",
     "  --env <env>           local | pre-staging | staging | prod",
     "  --git-sha <hex|HEAD>  Commit hash (7-40 hex chars or HEAD)",
-    "  --ttl <sec>           TTL in seconds (1..2592000)",
+    "  --ttl <sec>           TTL seconds (1..2592000; <= 604800 for env-ttl)",
+    "  --ttl-mode <mode>     sha-pinned (default) | env-ttl",
     "  --summary <text>      Factual summary (quarantine-scanned)",
     "  --evidence <ref>      Verifiable CI/hook evidence ref",
     "  --issuer <issuer>     ci | git-hook | verifier-script (agents denied)",
+    "",
+  ].join("\n"),
+  "attest-test": [
+    "Usage: veribrain attest-test [options] -- <executable> [args...]",
+    "       veribrain attest-test --cmd <cmd> [--arg <val>...] [options]",
+    "",
+    "Run test command (shell: false) and emit Tier 2 OBS-VERIFY-* receipt.",
+    "",
+    "Options:",
+    "  --claim-id <OBS-*>    OBS-VERIFY-* id (default: auto-generated)",
+    "  --env <env>           local (default) | pre-staging | staging | prod",
+    "  --git-sha <hex|HEAD>  Commit SHA (default: HEAD); --ttl <sec>",
+    "  --ttl-mode <mode>     sha-pinned (default) | env-ttl; --timeout <ms>",
+    "  --record-failure      Record OBS-VERIFY-* even on non-zero exit",
+    "  --dry-run             Run command without writing; --format text|json",
     "",
   ].join("\n"),
   decide: [
@@ -154,6 +185,20 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "  --brain-dir <path>    Path to .brain directory (default: .brain)",
     "",
   ].join("\n"),
+  "check-citations": [
+    "Usage: veribrain check-citations [options]",
+    "",
+    "Audit repo Markdown docs for missing, superseded, or expired citations.",
+    "",
+    "Options:",
+    "  --paths <csv>         Explicit repo-relative files to scan",
+    "  --decided-only        Check DEC-* citations only (skip OBS-*)",
+    "  --include-code-blocks Include fenced code blocks in citation scan",
+    "  --ignore-ids <csv>    Comma-separated claim IDs to ignore",
+    "  --format <text|json>  Output format (default: text; exits 1 on drift)",
+    "  --brain-dir <path>    Path to .brain directory (default: .brain)",
+    "",
+  ].join("\n"),
   diff: [
     "Usage: veribrain diff [--since <window>] [options]",
     "",
@@ -163,6 +208,19 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "  --since <Nd|Nh>       Lookback window (default: 7d)",
     "  --brain-dir <path>    Path to .brain directory (default: .brain)",
     "  --repo-root <path>    Repository root path (default: cwd)",
+    "",
+  ].join("\n"),
+  retro: [
+    "Usage: veribrain retro [--since <window>] [--format md|json] [options]",
+    "",
+    "Generate uncapped weekly retro digest (eval, KV floor, expiry, scars).",
+    "",
+    "Options:",
+    "  --since <Nd|Nh>       Lookback window (default: 7d)",
+    "  --env <env>           local (default) | pre-staging | staging | prod",
+    "  --zone-a-layout <m>   legacy | split (A0+A1 constitutional split)",
+    "  --format <md|json>    Output format (default: md)",
+    "  --brain-dir <path>    Path to .brain directory (default: .brain)",
     "",
   ].join("\n"),
   "lint-text": [
@@ -208,6 +266,7 @@ export interface CliIo {
 interface ParsedArgs {
   command: string | null;
   positionals: string[];
+  passthroughArgs: string[];
   flags: Map<string, string | boolean>;
   multiFlags: Map<string, string[]>;
 }
@@ -222,6 +281,7 @@ const VALUE_FLAGS = new Set([
   "envs",
   "git-sha",
   "max-tokens",
+  "zone-a-layout",
   "format",
   "claim-id",
   "id",
@@ -233,6 +293,12 @@ const VALUE_FLAGS = new Set([
   "regression-test",
   "mirror-dir",
   "ttl",
+  "ttl-mode",
+  "cmd",
+  "arg",
+  "timeout",
+  "paths",
+  "ignore-ids",
   "summary",
   "evidence",
   "issuer",
@@ -242,7 +308,7 @@ const VALUE_FLAGS = new Set([
   "print-config",
 ]);
 
-const REPEATABLE_FLAGS = new Set(["mirror-dir"]);
+const REPEATABLE_FLAGS = new Set(["mirror-dir", "arg"]);
 
 const BOOLEAN_FLAGS = new Set([
   "strict",
@@ -252,6 +318,9 @@ const BOOLEAN_FLAGS = new Set([
   "check-mirror",
   "force",
   "print-ci",
+  "record-failure",
+  "include-code-blocks",
+  "decided-only",
 ]);
 
 const COMMANDS_WITH_POSITIONAL = new Set(["sign", "promote", "lint-text", "hooks"]);
@@ -259,11 +328,16 @@ const COMMANDS_WITH_POSITIONAL = new Set(["sign", "promote", "lint-text", "hooks
 function parseCliArgs(argv: readonly string[]): ParsedArgs {
   let command: string | null = null;
   const positionals: string[] = [];
+  const passthroughArgs: string[] = [];
   const flags = new Map<string, string | boolean>();
   const multiFlags = new Map<string, string[]>();
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i] ?? "";
+    if (arg === "--") {
+      passthroughArgs.push(...argv.slice(i + 1));
+      break;
+    }
     if (arg === "-h") {
       flags.set("help", true);
       continue;
@@ -344,7 +418,7 @@ function parseCliArgs(argv: readonly string[]): ParsedArgs {
     }
   }
 
-  return { command, positionals, flags, multiFlags };
+  return { command, positionals, passthroughArgs, flags, multiFlags };
 }
 
 function getMultiFlag(
@@ -483,6 +557,25 @@ function formatCompileReceipt(
   return truncateAscii(compact, MAX_COLS);
 }
 
+function peekCliCommand(argv: readonly string[]): string | null {
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i] ?? "";
+    if (arg === "--") break;
+    if (arg === "-h" || arg === "-v" || arg === "--help" || arg === "--version") continue;
+    if (arg.startsWith("--")) {
+      const eqIdx = arg.indexOf("=");
+      const rawName = eqIdx === -1 ? arg.slice(2) : arg.slice(2, eqIdx);
+      if (eqIdx === -1 && VALUE_FLAGS.has(rawName)) {
+        i += 1;
+      }
+      continue;
+    }
+    if (arg.startsWith("-")) continue;
+    return arg;
+  }
+  return null;
+}
+
 export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): ExitCode {
   const io: CliIo = {
     stdout: customIo?.stdout ?? ((chunk) => process.stdout.write(chunk)),
@@ -491,7 +584,28 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
   };
 
   try {
-    const { command, positionals, flags, multiFlags } = parseCliArgs(argv);
+    const envVars = io.env ?? process.env;
+    const dashDashIdx = argv.indexOf("--");
+    const preDashArgs = dashDashIdx === -1 ? argv : argv.slice(0, dashDashIdx);
+    const hasHelpOrVersion = preDashArgs.some(
+      (a) => a === "--help" || a === "-h" || a === "--version" || a === "-v",
+    );
+    if (
+      !hasHelpOrVersion &&
+      isAgentEnvironment(envVars) &&
+      peekCliCommand(argv) === "attest-test"
+    ) {
+      throw new VeriBrainError({
+        exitCode: EXIT_PROVENANCE_VIOLATION,
+        code: "PROVENANCE_VIOLATION",
+        claimId: "attest-test",
+        rule: "agent_self_attestation_denied",
+        detail: "Agents cannot emit Tier 2 OBSERVED verifier receipts via attest-test.",
+        fix: "Run veribrain attest-test outside agent mode from CI, hook, or verifier script.",
+      });
+    }
+
+    const { command, positionals, passthroughArgs, flags, multiFlags } = parseCliArgs(argv);
 
     if (flags.get("help") === true) {
       if (command !== null && SUBCOMMAND_HELP[command] !== undefined) {
@@ -512,9 +626,19 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
       return EXIT_OK;
     }
 
+    if (passthroughArgs.length > 0 && command !== "attest-test") {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "CLI_ERROR",
+        claimId: command,
+        rule: "unexpected_positional_arg",
+        detail: `Command ${command} does not accept '--' passthrough arguments.`,
+        fix: "Use '-- <cmd> [args...]' only with veribrain attest-test.",
+      });
+    }
+
     const brainDir = getStringFlag(flags, "brain-dir");
     const repoRoot = getStringFlag(flags, "repo-root");
-    const envVars = io.env ?? process.env;
     const mirrorDirs = getMultiFlag(multiFlags, "mirror-dir");
 
     switch (command) {
@@ -581,6 +705,20 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
         const maxTokensRaw = getStringFlag(flags, "max-tokens");
         if (maxTokensRaw !== undefined) {
           compileOpts.maxTokens = parseStrictPositiveInt(maxTokensRaw, "max-tokens", "compile");
+        }
+        const layoutRaw = getStringFlag(flags, "zone-a-layout");
+        if (layoutRaw !== undefined) {
+          if (!isValidZoneALayout(layoutRaw)) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId: "compile",
+              rule: "invalid_zone_a_layout",
+              detail: "--zone-a-layout must be legacy or split.",
+              fix: "Pass --zone-a-layout legacy|split.",
+            });
+          }
+          compileOpts.zoneALayout = layoutRaw as ZoneALayout;
         }
 
         const result = compileContext(compileOpts);
@@ -654,6 +792,20 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
           }
           observeOpts.priority = priorityRaw as Priority;
         }
+        const ttlModeRaw = getStringFlag(flags, "ttl-mode");
+        if (ttlModeRaw !== undefined) {
+          if (!isValidObservedTtlMode(ttlModeRaw)) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId,
+              rule: "invalid_ttl_mode",
+              detail: "--ttl-mode must be sha-pinned or env-ttl.",
+              fix: "Pass --ttl-mode sha-pinned|env-ttl.",
+            });
+          }
+          observeOpts.ttlMode = ttlModeRaw as ObservedTtlMode;
+        }
 
         const res = writeObservation(observeOpts);
         const receipt = truncateAscii(
@@ -662,6 +814,116 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
         );
         io.stdout(`${receipt}\n`);
         return EXIT_OK;
+      }
+
+      case "attest-test": {
+        if (isAgentEnvironment(envVars)) {
+          throw new VeriBrainError({
+            exitCode: EXIT_PROVENANCE_VIOLATION,
+            code: "PROVENANCE_VIOLATION",
+            claimId: "attest-test",
+            rule: "agent_self_attestation_denied",
+            detail: "Agents cannot emit Tier 2 OBSERVED verifier receipts via attest-test.",
+            fix: "Run veribrain attest-test outside agent mode from CI, hook, or verifier script.",
+          });
+        }
+        const format = (getStringFlag(flags, "format") ?? "text").trim().toLowerCase();
+        if (format !== "text" && format !== "json") {
+          throw new VeriBrainError({
+            exitCode: EXIT_ERROR,
+            code: "CLI_ERROR",
+            claimId: "attest-test",
+            rule: "invalid_format",
+            detail: "--format must be text or json.",
+            fix: "Pass --format text or --format json.",
+          });
+        }
+        const attestOpts: AttestTestOptions = {
+          dryRun: flags.get("dry-run") === true,
+          recordFailure: flags.get("record-failure") === true,
+          envVars,
+        };
+        if (brainDir !== undefined) attestOpts.brainDir = brainDir;
+        if (repoRoot !== undefined) attestOpts.repoRoot = repoRoot;
+        if (passthroughArgs.length > 0) attestOpts.argv = passthroughArgs;
+        const cmd = getStringFlag(flags, "cmd");
+        if (cmd !== undefined) attestOpts.cmd = cmd;
+        const extraArgs = getMultiFlag(multiFlags, "arg");
+        if (extraArgs !== undefined) attestOpts.args = extraArgs;
+        const claimId = getStringFlag(flags, "claim-id");
+        if (claimId !== undefined) attestOpts.claimId = claimId;
+        const envRaw = getStringFlag(flags, "env");
+        if (envRaw !== undefined) {
+          if (!isValidEnv(envRaw)) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId: "attest-test",
+              rule: "invalid_env",
+              detail: "--env must be local, pre-staging, staging, or prod.",
+              fix: INVALID_ENV_FIX_HINT,
+            });
+          }
+          attestOpts.env = envRaw as EnvName;
+        }
+        const gitSha = getStringFlag(flags, "git-sha");
+        if (gitSha !== undefined) attestOpts.gitSha = gitSha;
+        const ttlRaw = getStringFlag(flags, "ttl");
+        if (ttlRaw !== undefined) {
+          attestOpts.ttlSeconds = parseStrictPositiveInt(ttlRaw, "ttl", "attest-test");
+        }
+        const ttlModeRaw = getStringFlag(flags, "ttl-mode");
+        if (ttlModeRaw !== undefined) {
+          if (!isValidObservedTtlMode(ttlModeRaw)) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId: "attest-test",
+              rule: "invalid_ttl_mode",
+              detail: "--ttl-mode must be sha-pinned or env-ttl.",
+              fix: "Pass --ttl-mode sha-pinned|env-ttl.",
+            });
+          }
+          attestOpts.ttlMode = ttlModeRaw as ObservedTtlMode;
+        }
+        const timeoutRaw = getStringFlag(flags, "timeout");
+        if (timeoutRaw !== undefined) {
+          attestOpts.timeoutMs = parseStrictPositiveInt(timeoutRaw, "timeout", "attest-test");
+        }
+        const roles = splitCsvFlag(getStringFlag(flags, "roles"));
+        if (roles !== undefined) attestOpts.roles = roles;
+        const priorityRaw = getStringFlag(flags, "priority");
+        if (priorityRaw !== undefined) {
+          if (!isValidPriority(priorityRaw)) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId: "attest-test",
+              rule: "invalid_priority",
+              detail: "--priority must be P0, P1, or P2.",
+              fix: "Pass --priority P0|P1|P2.",
+            });
+          }
+          attestOpts.priority = priorityRaw as Priority;
+        }
+
+        const res = attestTest(attestOpts);
+        if (format === "json") {
+          io.stdout(`${JSON.stringify(res, null, 2)}\n`);
+        } else {
+          const modeTag = res.dry_run ? " [dry-run]" : res.recorded ? " [recorded]" : "";
+          const statusWord = res.passed ? "ok" : "FAIL";
+          const line = truncateAscii(
+            `attest-test ${statusWord}: ${res.claim_id} exit=${res.exit_code} ${res.duration_ms}ms out=${res.output_sha256.slice(0, 12)}${modeTag}`,
+            MAX_COLS,
+          );
+          if (res.passed) {
+            io.stdout(`${line}\n`);
+          } else {
+            io.stderr(`${line}\n`);
+          }
+        }
+        return res.passed ? EXIT_OK : EXIT_ERROR;
       }
 
       case "decide": {
@@ -895,6 +1157,97 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
         return EXIT_OK;
       }
 
+      case "check-citations": {
+        const format = (getStringFlag(flags, "format") ?? "text").trim().toLowerCase();
+        if (format !== "text" && format !== "json") {
+          throw new VeriBrainError({
+            exitCode: EXIT_ERROR,
+            code: "CLI_ERROR",
+            claimId: "check-citations",
+            rule: "invalid_format",
+            detail: "--format must be text or json.",
+            fix: "Pass --format text or --format json.",
+          });
+        }
+        const checkOpts: CheckCitationsOptions = {
+          includeCodeBlocks: flags.get("include-code-blocks") === true,
+          decidedOnly: flags.get("decided-only") === true,
+        };
+        if (brainDir !== undefined) checkOpts.brainDir = brainDir;
+        if (repoRoot !== undefined) checkOpts.repoRoot = repoRoot;
+        const paths = splitCsvFlag(getStringFlag(flags, "paths"));
+        if (paths !== undefined) checkOpts.paths = paths;
+        const ignoreIds = splitCsvFlag(getStringFlag(flags, "ignore-ids"));
+        if (ignoreIds !== undefined) checkOpts.ignoreIds = ignoreIds;
+
+        const res = checkCitations(checkOpts);
+        if (format === "json") {
+          io.stdout(`${JSON.stringify(res, null, 2)}\n`);
+        } else if (res.ok) {
+          io.stdout(res.rendered);
+        } else {
+          io.stderr(res.rendered);
+        }
+        return res.ok ? EXIT_OK : EXIT_ERROR;
+      }
+
+      case "retro": {
+        const format = (getStringFlag(flags, "format") ?? "md").trim().toLowerCase();
+        if (format !== "md" && format !== "json") {
+          throw new VeriBrainError({
+            exitCode: EXIT_ERROR,
+            code: "CLI_ERROR",
+            claimId: "retro",
+            rule: "invalid_format",
+            detail: "--format must be md or json.",
+            fix: "Pass --format md or --format json.",
+          });
+        }
+        const retroOpts: RetroOptions = {};
+        if (brainDir !== undefined) retroOpts.brainDir = brainDir;
+        if (repoRoot !== undefined) retroOpts.repoRoot = repoRoot;
+        const since = getStringFlag(flags, "since");
+        if (since !== undefined) retroOpts.since = since;
+        const envRaw = getStringFlag(flags, "env");
+        if (envRaw !== undefined) {
+          if (!isValidEnv(envRaw)) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId: "retro",
+              rule: "invalid_env",
+              detail: "--env must be local, pre-staging, staging, or prod.",
+              fix: INVALID_ENV_FIX_HINT,
+            });
+          }
+          retroOpts.env = envRaw as EnvName;
+        }
+        const layoutRaw = getStringFlag(flags, "zone-a-layout");
+        if (layoutRaw !== undefined) {
+          if (!isValidZoneALayout(layoutRaw)) {
+            throw new VeriBrainError({
+              exitCode: EXIT_ERROR,
+              code: "CLI_ERROR",
+              claimId: "retro",
+              rule: "invalid_zone_a_layout",
+              detail: "--zone-a-layout must be legacy or split.",
+              fix: "Pass --zone-a-layout legacy|split.",
+            });
+          }
+          retroOpts.zoneALayout = layoutRaw as ZoneALayout;
+        }
+        const roles = splitCsvFlag(getStringFlag(flags, "roles"));
+        if (roles !== undefined) retroOpts.roles = roles;
+
+        const res = generateRetroReport(retroOpts);
+        if (format === "json") {
+          io.stdout(`${JSON.stringify(res, null, 2)}\n`);
+        } else {
+          io.stdout(res.markdown);
+        }
+        return EXIT_OK;
+      }
+
       case "lint-text": {
         const targetFile = positionals[0] ?? getStringFlag(flags, "file");
         if (!targetFile) {
@@ -1073,86 +1426,90 @@ export async function runCliAsync(
     env: customIo?.env ?? process.env,
   };
 
-  try {
-    const { command, flags } = parseCliArgs(argv);
-    if (
-      command === "mcp" &&
-      flags.get("help") !== true &&
-      flags.get("version") !== true &&
-      getStringFlag(flags, "print-config") === undefined
-    ) {
-      const brainDir = getStringFlag(flags, "brain-dir");
-      const repoRoot = getStringFlag(flags, "repo-root");
-      const { startMcpStdioServer } = await import("./mcp/server.js");
-      await startMcpStdioServer({
-        ...(brainDir !== undefined ? { brainDir } : {}),
-        ...(repoRoot !== undefined ? { repoRoot } : {}),
+  if (peekCliCommand(argv) === "mcp") {
+    try {
+      const { command, flags } = parseCliArgs(argv);
+      if (
+        command === "mcp" &&
+        flags.get("help") !== true &&
+        flags.get("version") !== true &&
+        getStringFlag(flags, "print-config") === undefined
+      ) {
+        const brainDir = getStringFlag(flags, "brain-dir");
+        const repoRoot = getStringFlag(flags, "repo-root");
+        const { startMcpStdioServer } = await import("./mcp/server.js");
+        await startMcpStdioServer({
+          ...(brainDir !== undefined ? { brainDir } : {}),
+          ...(repoRoot !== undefined ? { repoRoot } : {}),
+        });
+        return EXIT_OK;
+      }
+    } catch (err) {
+      if (err instanceof VeriBrainError) {
+        io.stderr(formatCliError(err));
+        return err.exitCode;
+      }
+      const rawDetail = err instanceof Error ? err.message : String(err);
+      const hasSensitive = scanTextForQuarantine(rawDetail, { claimId: "mcp" }) !== null;
+      const safeDetail = hasSensitive
+        ? "Unexpected internal error (raw message redacted for safety)."
+        : rawDetail;
+      const fallback = new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "UNEXPECTED_ERROR",
+        claimId: "mcp",
+        rule: "internal_error",
+        detail: safeDetail,
+        fix: "Inspect inputs and re-run veribrain eval.",
       });
-      return EXIT_OK;
+      io.stderr(formatCliError(fallback));
+      return EXIT_ERROR;
     }
-  } catch (err) {
-    if (err instanceof VeriBrainError) {
-      io.stderr(formatCliError(err));
-      return err.exitCode;
-    }
-    const rawDetail = err instanceof Error ? err.message : String(err);
-    const hasSensitive = scanTextForQuarantine(rawDetail, { claimId: "mcp" }) !== null;
-    const safeDetail = hasSensitive
-      ? "Unexpected internal error (raw message redacted for safety)."
-      : rawDetail;
-    const fallback = new VeriBrainError({
-      exitCode: EXIT_ERROR,
-      code: "UNEXPECTED_ERROR",
-      claimId: "mcp",
-      rule: "internal_error",
-      detail: safeDetail,
-      fix: "Inspect inputs and re-run veribrain eval.",
-    });
-    io.stderr(formatCliError(fallback));
-    return EXIT_ERROR;
   }
 
   return runCli(argv, io);
 }
 
 async function runCliEntrypoint(argv: readonly string[]): Promise<void> {
-  try {
-    const { command, flags } = parseCliArgs(argv);
-    if (
-      command === "mcp" &&
-      flags.get("help") !== true &&
-      flags.get("version") !== true &&
-      getStringFlag(flags, "print-config") === undefined
-    ) {
-      const brainDir = getStringFlag(flags, "brain-dir");
-      const repoRoot = getStringFlag(flags, "repo-root");
-      const { startMcpStdioServer } = await import("./mcp/server.js");
-      await startMcpStdioServer({
-        ...(brainDir !== undefined ? { brainDir } : {}),
-        ...(repoRoot !== undefined ? { repoRoot } : {}),
+  if (peekCliCommand(argv) === "mcp") {
+    try {
+      const { command, flags } = parseCliArgs(argv);
+      if (
+        command === "mcp" &&
+        flags.get("help") !== true &&
+        flags.get("version") !== true &&
+        getStringFlag(flags, "print-config") === undefined
+      ) {
+        const brainDir = getStringFlag(flags, "brain-dir");
+        const repoRoot = getStringFlag(flags, "repo-root");
+        const { startMcpStdioServer } = await import("./mcp/server.js");
+        await startMcpStdioServer({
+          ...(brainDir !== undefined ? { brainDir } : {}),
+          ...(repoRoot !== undefined ? { repoRoot } : {}),
+        });
+        return;
+      }
+    } catch (err) {
+      if (err instanceof VeriBrainError) {
+        process.stderr.write(formatCliError(err));
+        process.exit(err.exitCode);
+      }
+      const rawDetail = err instanceof Error ? err.message : String(err);
+      const hasSensitive = scanTextForQuarantine(rawDetail, { claimId: "mcp" }) !== null;
+      const safeDetail = hasSensitive
+        ? "Unexpected internal error (raw message redacted for safety)."
+        : rawDetail;
+      const fallback = new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "UNEXPECTED_ERROR",
+        claimId: "mcp",
+        rule: "internal_error",
+        detail: safeDetail,
+        fix: "Inspect inputs and re-run veribrain eval.",
       });
-      return;
+      process.stderr.write(formatCliError(fallback));
+      process.exit(EXIT_ERROR);
     }
-  } catch (err) {
-    if (err instanceof VeriBrainError) {
-      process.stderr.write(formatCliError(err));
-      process.exit(err.exitCode);
-    }
-    const rawDetail = err instanceof Error ? err.message : String(err);
-    const hasSensitive = scanTextForQuarantine(rawDetail, { claimId: "mcp" }) !== null;
-    const safeDetail = hasSensitive
-      ? "Unexpected internal error (raw message redacted for safety)."
-      : rawDetail;
-    const fallback = new VeriBrainError({
-      exitCode: EXIT_ERROR,
-      code: "UNEXPECTED_ERROR",
-      claimId: "mcp",
-      rule: "internal_error",
-      detail: safeDetail,
-      fix: "Inspect inputs and re-run veribrain eval.",
-    });
-    process.stderr.write(formatCliError(fallback));
-    process.exit(EXIT_ERROR);
   }
 
   const code = runCli(argv);

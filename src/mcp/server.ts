@@ -24,11 +24,12 @@ import {
   EXIT_ERROR,
   EXIT_QUARANTINE_VIOLATION,
   VeriBrainError,
+  type ZoneALayout,
 } from "../types.js";
 
 export { printMcpClientConfig };
 
-const MCP_SERVER_VERSION = "1.1.0";
+const MCP_SERVER_VERSION = "1.2.0";
 
 export interface VeriBrainMcpServerOptions {
   brainDir?: string;
@@ -143,6 +144,10 @@ export function createVeriBrainMcpServer(options: VeriBrainMcpServerOptions = {}
           .enum(["md", "json"])
           .optional()
           .describe('Optional output mode; pass "md" to include rendered markdown'),
+        zone_a_layout: z
+          .enum(["legacy", "split"])
+          .optional()
+          .describe('Optional Zone A layout override ("legacy" or "split" for A0+A1)'),
       },
       annotations: {
         readOnlyHint: true,
@@ -164,6 +169,9 @@ export function createVeriBrainMcpServer(options: VeriBrainMcpServerOptions = {}
         }
         if (args.max_tokens !== undefined) {
           compileOpts.maxTokens = args.max_tokens;
+        }
+        if (args.zone_a_layout !== undefined) {
+          compileOpts.zoneALayout = args.zone_a_layout as ZoneALayout;
         }
         const result = compileContext(compileOpts);
         const payload =
@@ -390,7 +398,7 @@ export function createVeriBrainMcpServer(options: VeriBrainMcpServerOptions = {}
           .string()
           .max(64)
           .optional()
-          .describe("Optional claim ID prefix filter (e.g. DEC-, OBS-, HYP-PP-FB-)"),
+          .describe("Optional claim ID prefix filter (e.g. DEC-, OBS-, HYP-FB-)"),
         role: z.string().max(64).optional().describe("Optional target role filter"),
         limit: z
           .number()

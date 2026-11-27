@@ -20,3 +20,6 @@
 /src/commands/hooks.ts @neverbeenthemayor
 /src/commands/mcp.ts @neverbeenthemayor
 /src/commands/observe.ts @neverbeenthemayor
+/src/commands/attest-test.ts @neverbeenthemayor
+/src/commands/check-citations.ts @neverbeenthemayor
+/src/commands/retro.ts @neverbeenthemayor

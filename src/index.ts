@@ -1,3 +1,5 @@
+export { attestTest } from "./commands/attest-test.js";
+export { checkCitations } from "./commands/check-citations.js";
 export { decideRule, signDecidedFile } from "./commands/decide.js";
 export { generateBrainDiff, parseSinceWindowMs } from "./commands/diff.js";
 export { evaluateBrain } from "./commands/eval.js";
@@ -35,6 +37,7 @@ export {
 } from "./commands/mcp.js";
 export { writeObservation } from "./commands/observe.js";
 export { promoteHypothesis } from "./commands/promote.js";
+export { DEFAULT_RETRO_ROLES, generateRetroReport } from "./commands/retro.js";
 export { compileContext, formatCompiledMarkdown } from "./compiler.js";
 export {
   createVeriBrainMcpServer,
@@ -106,8 +109,11 @@ export {
   isValidEnv,
   isValidGitSha,
   isValidIssuer,
+  isValidObservedTtlMode,
   isValidObsId,
   isValidPriority,
+  isValidSchemaVersion,
+  isValidZoneALayout,
   type LoadBrainOptions,
   loadBrain,
   loadBrainConfig,
@@ -128,7 +134,13 @@ export {
   stripHtmlCommentsPreservingLines,
 } from "./schema.js";
 export {
+  type AttestTestOptions,
+  type AttestTestResult,
   type BrainConfig,
+  type CheckCitationsOptions,
+  type CheckCitationsResult,
+  type CitationIssue,
+  type CitationIssueKind,
   type CompileOptions,
   type CompileResult,
   DEFAULT_CHARS_PER_TOKEN,
@@ -166,11 +178,13 @@ export {
   type LintTextOptions,
   type LintTextResult,
   type LoadedBrain,
+  MAX_ENV_TTL_SECONDS,
   MAX_HYPOTHESIS_TTL_SECONDS,
   MAX_OBSERVED_TTL_SECONDS,
   MAX_SCAR_TTL_SECONDS,
   MAX_SCARS_BYTES,
   type ObservedRecord,
+  type ObservedTtlMode,
   type ObserveOptions,
   type ObserveResult,
   type Priority,
@@ -179,15 +193,26 @@ export {
   priorityRank,
   type QuarantineConfig,
   type QuarantineRuleId,
+  type RetroExpiringItem,
+  type RetroOptions,
+  type RetroResult,
+  type RetroRoleFloorAudit,
+  type RetroScarCheck,
   SCHEMA_VERSION,
   type ScarRecord,
+  type SchemaVersion,
   type SignOptions,
   type SignResult,
   VALID_DECIDED_STATUSES,
   VALID_ENVS,
   VALID_ISSUERS,
+  VALID_OBSERVED_TTL_MODES,
   VALID_PRIORITIES,
+  VALID_SCHEMA_VERSIONS,
+  VALID_ZONE_A_LAYOUTS,
   VeriBrainError,
   type VeriBrainErrorInit,
+  ZONE_A0_BOUNDARY_MARKER,
   ZONE_BOUNDARY_MARKER,
+  type ZoneALayout,
 } from "./types.js";

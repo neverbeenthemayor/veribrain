@@ -1,4 +1,4 @@
-# VeriBrain (`v1.1.0`)
+# VeriBrain (`v1.2.0`)
 
 **Zero-dollar deterministic, provenance-verified context compiler and local `stdio` MCP shared brain for multi-agent engineering.**
 
@@ -27,18 +27,21 @@ npx veribrain init --signed-by "Your Name"
 # 2. Verify schema, provenance, quarantine, and scars budget
 npx veribrain eval --strict
 
-# 3. Compile byte-frozen Zone A + cited Zone B context (md or json)
-npx veribrain compile --role builder --env staging --format json
+# 3. Compile byte-frozen Zone A + cited Zone B context (md or json; optional Zone A0+A1 split)
+npx veribrain compile --role builder --env staging --format json --zone-a-layout split
 
-# 4. Author/sign DEC-* rules, promote HYP-* queues, lint drafts, or install Git hooks
+# 4. Author/sign DEC-* rules, promote HYP-* queues, audit doc citations, or run verifier tests
 npx veribrain decide --id DEC-002 --priority P1 --signed-by "Your Name" --body "Rule text."
 npx veribrain sign .brain/decided/DEC-002.md
 npx veribrain promote HYP-SCAR-001 --to scar
 npx veribrain lint-text docs/policy-draft.md
+npx veribrain check-citations
+npx veribrain attest-test --env local -- npm test
 npx veribrain hooks install
 
-# 5. Review aging scars, pending hypotheses, and expired claims in <= 25 lines
+# 5. Review weekly diffs (<= 25 lines) or run uncapped multi-role retro audit
 npx veribrain diff --since 7d
+npx veribrain retro --since 7d --format md
 
 # 6. Print local stdio MCP client config (antigravity | claude-code | cursor | codex)
 npx veribrain mcp --print-config antigravity
@@ -67,7 +70,7 @@ All VeriBrain state lives inside a plain, Git-tracked `.brain/` directory:
 | :--- | :--- | :--- | :--- |
 | `.brain/config.json` | Config | Human Owner | Budget scalars (`3.5` B/tok x `1.15`), `semantic_keys`, explicit PII allowlists |
 | `.brain/decided/*.md` | **Tier 1 (`DECIDED`)** | Human Owner (signed) | YAML frontmatter + 64-hex `sha256_body` verification + non-agent `signed_by` |
-| `.brain/observed/*.json` | **Tier 2 (`OBSERVED`)** | CI / Git Hook / Verifier | Scoped by `(env, git_sha, ttl_seconds)`; `issuer` in `ci \| git-hook \| verifier-script` |
+| `.brain/observed/*.json` | **Tier 2 (`OBSERVED`)** | CI / Git Hook / Verifier | Scoped by `(env, git_sha, ttl_seconds)` or bounded `env-ttl` (`<= 7d`); `issuer` in `ci \| git-hook \| verifier-script` |
 | `.brain/scars.md` | **Tier 3 Caution** | Human Owner (promote/prune) | `< 4,096` UTF-8 bytes, `<= 30d` TTL, repo-relative `regression_test` file link |
 | `.brain/hypotheses/*.json` | **Tier 3 (`HYPOTHESIS`)** | Coding Agents / MCP | Short TTL (`<= 7d`), isolated to Zone B, never auto-promoted |
 
@@ -75,7 +78,7 @@ All VeriBrain state lives inside a plain, Git-tracked `.brain/` directory:
 
 `veribrain compile` separates static policy from dynamic state using `\n\n<!-- VERIBRAIN:ZONE_BOUNDARY:A_END -->\n\n`:
 
-1. **Zone A (Byte-Frozen Static Prefix):** UTF-8 (no BOM), NFC-normalized, LF-only, sorted canonically by `(priorityRank ASC, ASCII id ASC)`. Contains zero timestamps, zero git SHAs, zero environment names, and zero volatile counters — preserving provider KV caches across turns.
+1. **Zone A (Byte-Frozen Static Prefix):** UTF-8 (no BOM), NFC-normalized, LF-only, sorted canonically by `(priorityRank ASC, ASCII id ASC)`. With `schema_version: "1.1"` or `--zone-a-layout split`, `Zone A` splits into role-agnostic `Zone A0` (`roles: ["*"]`, identical SHA-256 across all engineering roles) + `Zone A1` role delta. Contains zero timestamps, git SHAs, environment names, or volatile counters.
 2. **Zone B (Uncached Dynamic Tail):** Fresh `(env, git_sha, ttl)` observations with mandatory 1-line citations (`Based on: <claim_id> (<env>@<sha>)`), plus Tier 3 scars/hypotheses sandboxed inside `<untrusted_hint source="scar|hypothesis" id="..." non_authoritative="true">` after NFKC normalization, control/bidi/Unicode-Tag stripping, and full `&`/`<`/`>` escaping.
 
 ### Fail-Closed Exit Codes

@@ -4,6 +4,26 @@ All notable changes to **VeriBrain** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-11-27
+
+Constitutional Prefix Split, Test Attestation, Doc Drift Audit & Retro DX Wave (`PRG-2`: `PM-601`–`PM-605`, `18/20 pts`), preserving 100% byte-identical backward compatibility with `schema_version: "1.0"` legacy Zone A compilation (`$0.00/mo` runtime, zero new dependencies).
+
+### Added & Changed
+
+- **Zone `A0` + `A1` Constitutional Prefix Split (`PM-601`):**
+  - Added `VALID_SCHEMA_VERSIONS = ["1.0", "1.1"]`, `ZoneALayout = "legacy" | "split"`, `ZONE_A0_BOUNDARY_MARKER`, `BrainConfig.zone_a_layout`, CLI `compile --zone-a-layout legacy|split`, and MCP `veribrain_compile_context` (`zone_a_layout`).
+  - In `"split"` mode, shared constitutional rules (`roles: ["*"]`) compile into a role-agnostic `zone_a0` prefix (`zone_a0_sha256` 100% byte-identical across all 8 engineering roles), followed by role-specific `zone_a1`, plus additive `zone_a0*`/`zone_a1*` telemetry in `CompileResult` and `1,024`-token floor advisories.
+- **Tamper-Evident Local Test Attestation (`PM-602`):**
+  - Added `veribrain attest-test` (human/verifier-only `Exit 4` pre-flag agent denial, zero `shell: true`, shell-metacharacter rejection, safe Windows `npm-cli.js`/`npx-cli.js` Node resolution, bounded `--timeout`/`maxBuffer`, raw-arg pre-truncation quarantine scanning, zero raw output echo, `output_sha256` & `git_diff_stat_sha256` digests, and Tier 2 `OBS-VERIFY-*` receipt writing via `--record-failure`/`--dry-run`).
+- **Zero-LLM Citation Drift Auditor (`PM-603`):**
+  - Added `veribrain check-citations` scanning repo-confined Markdown (`Exit 4` pre-`lstatSync` escape/system/isolation rejection, `<= 500` files / `<= 512 KB` / depth `<= 32` bounds, fenced-code & placeholder exclusions) to catch missing/superseded `DEC-*` and missing/expired `OBS-*` IDs.
+- **Weekly Retro Digest & Optional `env-ttl` Tier 2 Mode (`PM-604`):**
+  - Added `veribrain retro [--since 7d] [--format md|json] [--env <env>] [--zone-a-layout legacy|split]` generating uncapped, quarantine-scrubbed Markdown/JSON reports covering `eval --strict`, 8-role `1,024`-token KV-cache floor audits, expiring claims (`<= 48h`), `scars.md` regression test checks, and promote commands.
+  - Added `ObservedTtlMode = "sha-pinned" | "env-ttl"` (`<= 7d` / `604,800s` max TTL enforced at write/eval time, strict env match, cross-commit validity, explicit `(env@sha, env-ttl)` citations).
+- **Tier-Aware Diff Actions, Rule Slugs & Package Hygiene (`PM-605`):**
+  - Updated `veribrain diff` with category-specific action prompts (`[DEC]`, `[HYP]`, `[OBS]`, `[SCAR]`) and concise rule titles/slugs within strict `<= 5` bullets / `<= 25` lines / `<= 80` ASCII cols.
+  - Normalized `package.json` (`"bin": { "veribrain": "dist/cli.js" }`, `"repository.url": "git+https://github.com/neverbeenthemayor/veribrain.git"`) for zero-warning `npm publish`, and aligned CLI/MCP metadata to `1.2.0`.
+
 ## [1.1.0] - 2026-11-26
 
 Customer-Zero DX & Governance Wave (`PRG-1`: `PM-501`–`PM-504`), fully backward-compatible with `schema_version: "1.0"`, `renderZoneA`, and `buildSemanticHash` formatting (`$0.00/mo` runtime, zero new runtime dependencies).

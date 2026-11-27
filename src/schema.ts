@@ -30,20 +30,27 @@ import {
   type HypothesisRecord,
   type Issuer,
   type LoadedBrain,
+  MAX_ENV_TTL_SECONDS,
   MAX_HYPOTHESIS_TTL_SECONDS,
   MAX_OBSERVED_TTL_SECONDS,
   MAX_SCAR_TTL_SECONDS,
   MAX_SCARS_BYTES,
   type ObservedRecord,
+  type ObservedTtlMode,
   type Priority,
   type QuarantineConfig,
   SCHEMA_VERSION,
   type ScarRecord,
+  type SchemaVersion,
   VALID_DECIDED_STATUSES,
   VALID_ENVS,
   VALID_ISSUERS,
+  VALID_OBSERVED_TTL_MODES,
   VALID_PRIORITIES,
+  VALID_SCHEMA_VERSIONS,
+  VALID_ZONE_A_LAYOUTS,
   VeriBrainError,
+  type ZoneALayout,
 } from "./types.js";
 
 const DEC_ID_RE = /^DEC-[A-Za-z0-9._-]+$/;
@@ -768,6 +775,18 @@ export function isValidObsId(value: string): boolean {
   return OBS_ID_RE.test(value);
 }
 
+export function isValidSchemaVersion(value: string): value is SchemaVersion {
+  return (VALID_SCHEMA_VERSIONS as readonly string[]).includes(value);
+}
+
+export function isValidZoneALayout(value: string): value is ZoneALayout {
+  return (VALID_ZONE_A_LAYOUTS as readonly string[]).includes(value);
+}
+
+export function isValidObservedTtlMode(value: string): value is ObservedTtlMode {
+  return (VALID_OBSERVED_TTL_MODES as readonly string[]).includes(value);
+}
+
 export function defaultQuarantineConfig(): QuarantineConfig {
   return {
     allowed_emails: [],
@@ -960,16 +979,17 @@ export function loadBrainConfig(brainDir: string, bypassReadCache = false): Brai
   scanDecodedJsonStrings(parsed, "config.json", quarantine);
   assertQuarantineClean(raw, { claimId: "config.json", config: quarantine });
 
-  if (obj.schema_version !== SCHEMA_VERSION) {
+  if (typeof obj.schema_version !== "string" || !isValidSchemaVersion(obj.schema_version)) {
     throw new VeriBrainError({
       exitCode: EXIT_ERROR,
       code: "SCHEMA_ERROR",
       claimId: "config.json",
       rule: "invalid_schema_version",
-      detail: `Unsupported schema_version (expected ${SCHEMA_VERSION}).`,
-      fix: `Set "schema_version": "${SCHEMA_VERSION}" in .brain/config.json.`,
+      detail: `Unsupported schema_version (expected ${VALID_SCHEMA_VERSIONS.join(" or ")}).`,
+      fix: `Set "schema_version": "1.0" or "1.1" in .brain/config.json.`,
     });
   }
+  const schemaVersion: SchemaVersion = obj.schema_version;
 
   const estimatorVersion =
     typeof obj.estimator_version === "string" && obj.estimator_version.trim().length > 0
@@ -1058,8 +1078,23 @@ export function loadBrainConfig(brainDir: string, bypassReadCache = false): Brai
       ? undefined
       : asStringArray(obj.mirror_dirs, "config.json", "mirror_dirs");
 
+  let zoneALayout: ZoneALayout | undefined;
+  if (obj.zone_a_layout !== undefined) {
+    if (typeof obj.zone_a_layout !== "string" || !isValidZoneALayout(obj.zone_a_layout)) {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "SCHEMA_ERROR",
+        claimId: "config.json",
+        rule: "invalid_zone_a_layout",
+        detail: "zone_a_layout must be legacy or split.",
+        fix: 'Set "zone_a_layout": "legacy" or "split" in .brain/config.json.',
+      });
+    }
+    zoneALayout = obj.zone_a_layout;
+  }
+
   const cfg: BrainConfig = {
-    schema_version: SCHEMA_VERSION,
+    schema_version: schemaVersion,
     estimator_version: estimatorVersion,
     chars_per_token: charsPerToken,
     safety_margin: safetyMargin,
@@ -1072,6 +1107,9 @@ export function loadBrainConfig(brainDir: string, bypassReadCache = false): Brai
   }
   if (mirrorDirs !== undefined) {
     cfg.mirror_dirs = mirrorDirs;
+  }
+  if (zoneALayout !== undefined) {
+    cfg.zone_a_layout = zoneALayout;
   }
   return cfg;
 }
@@ -1603,6 +1641,31 @@ export function parseObservedFile(
     });
   }
 
+  let ttlMode: ObservedTtlMode | undefined;
+  if (obj.ttl_mode !== undefined) {
+    if (typeof obj.ttl_mode !== "string" || !isValidObservedTtlMode(obj.ttl_mode)) {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "SCHEMA_ERROR",
+        claimId,
+        rule: "invalid_ttl_mode",
+        detail: "Observed ttl_mode must be sha-pinned or env-ttl when specified.",
+        fix: `Set ttl_mode to "sha-pinned" or "env-ttl" in ${fileName}.`,
+      });
+    }
+    ttlMode = obj.ttl_mode;
+    if (ttlMode === "env-ttl" && ttlSeconds > MAX_ENV_TTL_SECONDS) {
+      throw new VeriBrainError({
+        exitCode: EXIT_ERROR,
+        code: "SCHEMA_ERROR",
+        claimId,
+        rule: "env_ttl_exceeded",
+        detail: `env-ttl observed record ttl_seconds (${ttlSeconds}) exceeds ${MAX_ENV_TTL_SECONDS}s (7d) cap.`,
+        fix: `Reduce ttl_seconds to <= ${MAX_ENV_TTL_SECONDS} or use ttl_mode "sha-pinned" in ${fileName}.`,
+      });
+    }
+  }
+
   const roles = asStringArray(obj.roles, claimId, "roles");
   if (roles.length === 0) {
     throw new VeriBrainError({
@@ -1654,7 +1717,7 @@ export function parseObservedFile(
     priority = obj.priority;
   }
 
-  return {
+  const observedRecord: ObservedRecord = {
     claim_id: claimId,
     env,
     git_sha: gitSha,
@@ -1667,6 +1730,10 @@ export function parseObservedFile(
     priority,
     source_file: filePath,
   };
+  if (ttlMode !== undefined) {
+    observedRecord.ttl_mode = ttlMode;
+  }
+  return observedRecord;
 }
 
 export function parseHypothesisFile(
