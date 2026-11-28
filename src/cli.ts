@@ -6,6 +6,7 @@ import { attestTest } from "./commands/attest-test.js";
 import { checkCitations } from "./commands/check-citations.js";
 import { decideRule, signDecidedFile } from "./commands/decide.js";
 import { generateBrainDiff } from "./commands/diff.js";
+import { formatDoctorMarkdown, formatDoctorText, runDoctor } from "./commands/doctor.js";
 import { evaluateBrain } from "./commands/eval.js";
 import { installGitHooks } from "./commands/hooks.js";
 import { initBrain } from "./commands/init.js";
@@ -17,7 +18,7 @@ import { generateRetroReport } from "./commands/retro.js";
 import { formatStatsMarkdown, formatStatsText, runStats } from "./commands/stats.js";
 import { compileContext, formatCompiledMarkdown } from "./compiler.js";
 import { truncateAscii, wrapAsciiLines } from "./normalize.js";
-import { scanTextForQuarantine } from "./quarantine.js";
+import { assertQuarantineClean, scanTextForQuarantine } from "./quarantine.js";
 import {
   INVALID_ENV_FIX_HINT,
   isAgentEnvironment,
@@ -32,6 +33,8 @@ import {
   type CompileOptions,
   type DecideOptions,
   type DiffOptions,
+  type DoctorFormat,
+  type DoctorOptions,
   type EnvName,
   type EvalIssue,
   type EvalOptions,
@@ -55,7 +58,7 @@ import {
   type ZoneALayout,
 } from "./types.js";
 
-const CLI_VERSION = "1.3.0";
+const CLI_VERSION = "1.4.0";
 const MAX_COLS = 80;
 
 const HELP_TEXT = [
@@ -69,7 +72,7 @@ const HELP_TEXT = [
   "  attest-test      Run test command & emit OBS-VERIFY-* [-- <cmd> | --cmd]",
   "  decide / sign    Author or re-sign DEC-* rules & sync mirrors (human)",
   "  promote          Promote HYP-* to scars.md or DEC-* [--to scar|decided]",
-  "  eval             Run $0 schema, quarantine & mirror checks [--strict]",
+  "  eval / doctor    $0 schema/quarantine checks or guided maturity report",
   "  check-citations  Audit docs for missing/superseded DEC-*/OBS-* citations",
   "  diff / retro     Weekly 1-screen diff or uncapped retro digest [--since 7d]",
   "  stats            Local $0 ROI & token-savings telemetry [--since 30d]",
@@ -187,6 +190,20 @@ const SUBCOMMAND_HELP: Record<string, string> = {
     "  --check-mirror        Verify byte-for-byte SHA-256 mirror parity",
     "  --mirror-dir <dir>    Additional mirror directory (repeatable)",
     "  --brain-dir <path>    Path to .brain directory (default: .brain)",
+    "",
+  ].join("\n"),
+  doctor: [
+    "Usage: veribrain doctor [options]",
+    "",
+    "Read-only guided health & maturity report (L0-L4) with next-step fixes.",
+    "",
+    "Options:",
+    "  --format <fmt>        text (default) | md | json",
+    "  --role <role>         Target role for split A0 check (default: builder)",
+    "  --env <env>           Target env for Tier 2 check (default: local)",
+    "  --strict              Exit 1 on WARN as well as FAIL",
+    "  --brain-dir <path>    .brain path | --repo-root <path> repo root",
+    "Exits: 0 ok | 1 FAIL (WARN w/ --strict) | 2 quarantine | 4 confinement",
     "",
   ].join("\n"),
   "check-citations": [
@@ -1380,6 +1397,65 @@ export function runCli(argv: readonly string[], customIo?: Partial<CliIo>): Exit
           io.stdout(formatStatsText(res));
         }
         return EXIT_OK;
+      }
+
+      case "doctor": {
+        // P3-PRG4-2: Quarantine-check ALL three raw flags BEFORE throwing invalid_format (Exit 2 wins!)
+        const rawFormatFlag = getStringFlag(flags, "format");
+        const rawRoleFlag = getStringFlag(flags, "role");
+        const rawEnvFlag = getStringFlag(flags, "env");
+        if (rawFormatFlag !== undefined) {
+          assertQuarantineClean(rawFormatFlag, {
+            claimId: "doctor",
+            field: "format",
+            allowHashRefExemption: false,
+          });
+        }
+        if (rawRoleFlag !== undefined) {
+          assertQuarantineClean(rawRoleFlag, {
+            claimId: "doctor",
+            field: "role",
+            allowHashRefExemption: false,
+          });
+        }
+        if (rawEnvFlag !== undefined) {
+          assertQuarantineClean(rawEnvFlag, {
+            claimId: "doctor",
+            field: "env",
+            allowHashRefExemption: false,
+          });
+        }
+        const formatRaw = (rawFormatFlag ?? "text").trim().toLowerCase();
+        if (formatRaw !== "text" && formatRaw !== "md" && formatRaw !== "json") {
+          throw new VeriBrainError({
+            exitCode: EXIT_ERROR,
+            code: "CLI_ERROR",
+            claimId: "doctor",
+            rule: "invalid_format",
+            detail: "--format must be text, md, or json.",
+            fix: "Pass --format text|md|json.",
+          });
+        }
+
+        const doctorOpts: DoctorOptions = {
+          format: formatRaw as DoctorFormat,
+          strict: flags.get("strict") === true,
+          envVars,
+        };
+        if (rawRoleFlag !== undefined) doctorOpts.role = rawRoleFlag;
+        if (rawEnvFlag !== undefined) doctorOpts.env = rawEnvFlag as EnvName;
+        if (brainDir !== undefined) doctorOpts.brainDir = brainDir;
+        if (repoRoot !== undefined) doctorOpts.repoRoot = repoRoot;
+
+        const res = runDoctor(doctorOpts);
+        if (formatRaw === "json") {
+          io.stdout(`${JSON.stringify(res, null, 2)}\n`);
+        } else if (formatRaw === "md") {
+          io.stdout(formatDoctorMarkdown(res));
+        } else {
+          io.stdout(formatDoctorText(res));
+        }
+        return res.exit_code;
       }
 
       case "lint-text": {

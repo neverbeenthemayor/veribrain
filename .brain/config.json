@@ -9,5 +9,8 @@
     "allowed_emails": [],
     "allowed_domains": [],
     "allowed_phones": []
+  },
+  "metrics": {
+    "enabled": true
   }
 }

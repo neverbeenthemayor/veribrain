@@ -58,7 +58,7 @@ describe("CLI ergonomics and weekly 1-screen diff", () => {
   it("renders concise plain-ASCII global --help (<= 20 lines) and per-command <cmd> --help (<= 12 lines, <= 80 cols)", () => {
     const verRes = captureCli(["--version"]);
     expect(verRes.code).toBe(EXIT_OK);
-    expect(verRes.stdout).toBe("veribrain 1.3.0\n");
+    expect(verRes.stdout).toBe("veribrain 1.4.0\n");
 
     const res = captureCli(["--help"]);
     expect(res.code).toBe(EXIT_OK);
@@ -79,6 +79,7 @@ describe("CLI ergonomics and weekly 1-screen diff", () => {
       "sign",
       "promote",
       "eval",
+      "doctor",
       "check-citations",
       "diff",
       "retro",

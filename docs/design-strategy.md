@@ -1,9 +1,10 @@
 # VeriBrain — Design, CLI DX & Build-in-Public Strategy (CUDE)
 
-- **Owner:** Chief User Design Engineer (CUDE) · **Baseline Date:** `2026-11-28` (`v1.3.0` / `PRG-3`)
-- **Primary Surfaces:** Terminal CLI UX (`veribrain init / compile / eval / diff / retro / observe / attest-test / check-citations / stats`), Machine-Readable Context Output (`Zone A0`+`A1` & `Zone B`), Local `stdio` MCP (`7` tools incl. `veribrain_stats`), and Tier 1 Build-in-Public Publishing (`gdocs` Engineering Blog + `gslides` 10-Slide Benchmark Talk Deck + Launch Announcement Kit).
+- **Owner:** Chief User Design Engineer (CUDE) · **Baseline Date:** `2026-11-28` (`v1.4.0` / `PRG-4`)
+- **Primary Surfaces:** Terminal CLI UX (`veribrain init / compile / eval / doctor / diff / retro / stats / observe / attest-test / check-citations`), Machine-Readable Context Output (`Zone A0`+`A1` & `Zone B`), Local `stdio` MCP (`7` tools incl. `veribrain_stats`), and Tier 1 Build-in-Public Publishing (`gdocs` Engineering Blog + `gslides` 10-Slide Benchmark Talk Deck + Launch Announcement Kit).
 
-## 1. CLI, Diff, Telemetry & Weekly Retro Ergonomics
+## 1. CLI, Diff, Maturity Diagnostics & Weekly Retro Ergonomics
+- **Guided `.brain/` Maturity (`veribrain doctor`):** Deterministic `L0`–`L4` health & maturity report across `8` read-only checks within `<= 30` lines / `<= 80`-col wrapped ASCII (`format text`), `11`-line `doctor --help` with `Exits:`, `20`-line global `--help` (`eval / doctor`), `(human)`/`(human/CI)` copy-paste action badges, and placeholder-only runnable CLI fixes.
 - **Zero Rubber-Stamp Fatigue (`veribrain diff`):** Strictly capped at **`<= 5` plain-English bullets** and **`<= 25` terminal lines** total (`<= 80`-column clean wrapping, plain ASCII). Actions are **tier-aware**: `[DEC]` (with concise title/slug) shows `[Keep] [Revise] [Deprecate/Revert]`, `[HYP]` shows `[Promote to DECIDED] [Promote to SCAR] [Discard]`, `[OBS]` shows `[Re-verify] [Prune]`, and `[SCAR]` shows `[Keep] [Renew] [Prune]`.
 - **Honest Local ROI UX (`veribrain stats` & `veribrain_stats`):** `--format text` stays strictly `<= 80` cols plain ASCII (`20`-line global `--help`, `11`-line `stats --help`), pairs opt-in disabled/empty states with copy-pasteable 1-line tips, marks estimated rows `(est.)`, and ships an explicit `methodology_note` separating measured local counts/hashes from `~4 B/tok` & nominal `90%` cache estimates (`no provider billing telemetry`).
 - **Uncapped Deep Audit (`veribrain retro`):** Outputs structured plain-ASCII Markdown/JSON covering health/`eval --strict`, 8-role `>= 1,024`-token KV-cache floor readiness, expiring `48h` items, `scars.md` test-link verification, and copy-pasteable `veribrain promote` hints.

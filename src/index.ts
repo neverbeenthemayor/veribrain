@@ -2,6 +2,7 @@ export { attestTest } from "./commands/attest-test.js";
 export { checkCitations } from "./commands/check-citations.js";
 export { decideRule, signDecidedFile } from "./commands/decide.js";
 export { generateBrainDiff, parseSinceWindowMs } from "./commands/diff.js";
+export { formatDoctorMarkdown, formatDoctorText, runDoctor } from "./commands/doctor.js";
 export { evaluateBrain } from "./commands/eval.js";
 export {
   installGitHooks,
@@ -172,6 +173,14 @@ export {
   type DiffItem,
   type DiffOptions,
   type DiffResult,
+  type DoctorCheck,
+  type DoctorCheckId,
+  type DoctorCheckStatus,
+  type DoctorCheckTier,
+  type DoctorFormat,
+  type DoctorMaturityLevel,
+  type DoctorOptions,
+  type DoctorResult,
   type EnvName,
   ESTIMATOR_VERSION,
   type EvalIssue,

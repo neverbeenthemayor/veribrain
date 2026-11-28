@@ -1,4 +1,4 @@
-# VeriBrain (`v1.3.0`)
+# VeriBrain (`v1.4.0`)
 
 **Zero-dollar deterministic, provenance-verified context compiler and local `stdio` MCP shared brain for multi-agent engineering.**
 
@@ -27,10 +27,13 @@ npx veribrain init --signed-by "Your Name"
 # 2. Verify schema, provenance, quarantine, and scars budget
 npx veribrain eval --strict
 
-# 3. Compile byte-frozen Zone A + cited Zone B context (md or json; optional Zone A0+A1 split)
+# 3. Check .brain/ maturity (L0-L4) and copy-pasteable next human actions
+npx veribrain doctor
+
+# 4. Compile byte-frozen Zone A + cited Zone B context (md or json; optional Zone A0+A1 split)
 npx veribrain compile --role builder --env staging --format json --zone-a-layout split
 
-# 4. Author/sign DEC-* rules, promote HYP-* queues, audit doc citations, or run verifier tests
+# 5. Author/sign DEC-* rules, promote HYP-* queues, audit doc citations, or run verifier tests
 npx veribrain decide --id DEC-002 --priority P1 --signed-by "Your Name" --body "Rule text."
 npx veribrain sign .brain/decided/DEC-002.md
 npx veribrain promote HYP-SCAR-001 --to scar
@@ -39,15 +42,15 @@ npx veribrain check-citations
 npx veribrain attest-test --env local -- npm test
 npx veribrain hooks install
 
-# 5. Review weekly diffs (<= 25 lines) or run uncapped multi-role retro audit
+# 6. Review weekly diffs (<= 25 lines) or run uncapped multi-role retro audit
 npx veribrain diff --since 7d
 npx veribrain retro --since 7d --format md
 
-# 6. Enable opt-in local $0 ROI & Zone A0 reuse telemetry (disabled by default)
+# 7. Enable opt-in local $0 ROI & Zone A0 reuse telemetry (disabled by default)
 npx veribrain stats --enable
 npx veribrain stats --since 30d
 
-# 7. Print local stdio MCP client config (antigravity | claude-code | cursor | codex)
+# 8. Print local stdio MCP client config (antigravity | claude-code | cursor | codex)
 npx veribrain mcp --print-config antigravity
 ```
 

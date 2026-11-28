@@ -610,6 +610,60 @@ export interface StatsResult {
   methodology_note: string;
 }
 
+export type DoctorCheckStatus = "PASS" | "WARN" | "FAIL" | "INFO";
+export type DoctorFormat = "text" | "md" | "json";
+export type DoctorMaturityLevel = "L0" | "L1" | "L2" | "L3" | "L4";
+export type DoctorCheckTier = "brain" | "eval" | "tier1" | "tier2" | "tier3" | "telemetry";
+
+export type DoctorCheckId =
+  | "brain.present"
+  | "eval.strict"
+  | "tier1.decided"
+  | "zone_a0.floor"
+  | "tier2.observed"
+  | "tier3.scars"
+  | "tier3.hypotheses"
+  | "telemetry.stats";
+
+export interface DoctorCheck {
+  id: DoctorCheckId;
+  tier: DoctorCheckTier;
+  status: DoctorCheckStatus;
+  summary: string;
+  fix: string[];
+}
+
+export interface DoctorOptions {
+  format?: DoctorFormat;
+  role?: string;
+  env?: EnvName;
+  strict?: boolean;
+  brainDir?: string;
+  repoRoot?: string;
+  now?: Date;
+  envVars?: NodeJS.ProcessEnv;
+}
+
+export interface DoctorResult {
+  ok: boolean;
+  exit_code: ExitCode;
+  strict: boolean;
+  role: string;
+  env: EnvName;
+  maturity: {
+    level: DoctorMaturityLevel;
+    score: 0 | 1 | 2 | 3 | 4;
+    label: string;
+  };
+  counts: {
+    pass: number;
+    warn: number;
+    fail: number;
+    info: number;
+  };
+  checks: DoctorCheck[];
+}
+
 export interface VeriBrainErrorInit {
   exitCode: ExitCode;
   code: string;

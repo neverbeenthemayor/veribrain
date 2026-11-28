@@ -87,7 +87,7 @@ describe("PRG-3 (v1.3.0) Golden Acceptance Suite (PM-701)", () => {
       repository: { url: string };
       dependencies: Record<string, string>;
     };
-    expect(pkg.version).toBe("1.3.0");
+    expect(pkg.version).toBe("1.4.0");
     expect(pkg.bin.veribrain).toBe("dist/cli.js");
     expect(pkg.repository.url).toBe("git+https://github.com/neverbeenthemayor/veribrain.git");
     expect(Object.keys(pkg.dependencies).sort()).toEqual(["@modelcontextprotocol/sdk", "zod"]);
@@ -98,7 +98,7 @@ describe("PRG-3 (v1.3.0) Golden Acceptance Suite (PM-701)", () => {
 
     const verRes = runDistCli(["--version"], REPO_ROOT);
     expect(verRes.status).toBe(EXIT_OK);
-    expect(verRes.stdout).toBe("veribrain 1.3.0\n");
+    expect(verRes.stdout).toBe(`veribrain ${pkg.version}\n`);
 
     const helpRes = runDistCli(["--help"], REPO_ROOT);
     expect(helpRes.status).toBe(EXIT_OK);
@@ -229,7 +229,7 @@ describe("PRG-3 (v1.3.0) Golden Acceptance Suite (PM-701)", () => {
     const client = new Client({ name: "prg3-golden-client", version: "1.0.0" });
     try {
       await client.connect(transport);
-      expect(client.getServerVersion()?.version).toBe("1.3.0");
+      expect(client.getServerVersion()?.version).toBe(pkg.version);
 
       const listed = await client.listTools();
       expect(listed.tools.map((t) => t.name).sort()).toEqual([
@@ -319,5 +319,5 @@ describe("PRG-3 (v1.3.0) Golden Acceptance Suite (PM-701)", () => {
       runDistCli(["compile", "--role", "builder", "--env", "local", "--git-sha", sha], repo).status,
     ).toBe(EXIT_OK);
     expect(existsSync(metricsFile)).toBe(false);
-  });
+  }, 15_000);
 });

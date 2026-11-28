@@ -30,7 +30,7 @@ import {
 
 export { printMcpClientConfig };
 
-const MCP_SERVER_VERSION = "1.3.0";
+const MCP_SERVER_VERSION = "1.4.0";
 
 export interface VeriBrainMcpServerOptions {
   brainDir?: string;

@@ -4,6 +4,18 @@ All notable changes to **VeriBrain** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-28
+
+Guided `.brain/` Maturity & Readiness Diagnostics Wave (`PRG-4`: `PM-702`, `3/20 pts`; `PM-703` `PROPOSED`, `PM-505` `PARKED`), adding a strictly read-only CLI diagnostic surface while leaving the `7`-tool MCP server and `Zone A` compilation untouched (`$0.00/mo` runtime, zero new dependencies).
+
+### Added & Changed
+
+- **Guided Read-Only Maturity Diagnostics (`veribrain doctor`, `PM-702`):**
+  - Added `veribrain doctor [--format text|md|json] [--role <role>] [--env <env>] [--strict] [--brain-dir <dir>] [--repo-root <dir>]` (`src/commands/doctor.ts`) plus `runDoctor`, `formatDoctorText`, and `formatDoctorMarkdown` library exports (`src/index.ts`).
+  - Strictly read-only (`recordMetrics: false` on split-layout `compileContext`, zero writes/mkdir/unlink/subprocess/network calls) and safe in agent mode (`VERIBRAIN_AGENT=1`), while tagging interactive/CI actions `(human)` or `(human/CI)` and copying-safe `veribrain decide --id DEC-NNN ... --signed-by "<Your Name>" --body "<rule>"` suggestions.
+  - Executes `8` deterministic checks (`brain.present`, `eval.strict`, `tier1.decided`, `zone_a0.floor` vs `1,024`-token split floor, `tier2.observed` + depth-`0` worktree-backlink verified `VERIBRAIN_HOOK_MARKER` pre-commit hook detection, `tier3.scars` `< 4,096 B` strict budget & regression test links, `tier3.hypotheses`, and read-only `telemetry.stats`) to grade deterministic maturity `L0`–`L4` (`Exit 0` clean, `Exit 1` FAIL or `--strict` WARN, `Exit 2` quarantine, `Exit 4` confinement).
+  - Enforces pre-read `.brain/` tier + symlink confinement (`lstatSync` before `realpathSync` on `--repo-root`, `ENOTDIR` normalization, zero raw path echo, raw flag quarantine before validation), `<= 30`-line / `<= 80`-col plain-ASCII wrapped text output, `11`-line `doctor --help` with exit codes, `20`-line global `--help` (`eval / doctor`), `/src/commands/doctor.ts` in `.github/CODEOWNERS`, and `1.4.0` package/CLI/MCP parity.
+
 ## [1.3.0] - 2026-11-28
 
 Local `$0` ROI & Token-Savings Telemetry Wave (`PRG-3`: `PM-701`, `3/20 pts`; `PM-505` `3 pts` remains `PARKED`), preserving 100% byte-identical backward compatibility across `Zone A` / `Zone A0` compilation and strictly opt-in zero-PII local telemetry (`$0.00/mo` runtime, zero new dependencies).

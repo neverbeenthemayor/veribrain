@@ -25,3 +25,4 @@
 /src/commands/check-citations.ts @neverbeenthemayor
 /src/commands/retro.ts @neverbeenthemayor
 /src/commands/stats.ts @neverbeenthemayor
+/src/commands/doctor.ts @neverbeenthemayor

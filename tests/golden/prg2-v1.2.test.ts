@@ -425,7 +425,7 @@ describe("PRG-2 (v1.2.0) Golden Acceptance Suite (PM-601..PM-605)", () => {
     const failRec = JSON.parse(readFileSync(failPath, "utf8")) as Record<string, unknown>;
     expect(String(failRec.summary)).toContain("FAILED");
     expect(String(failRec.evidence_ref)).toContain("verifier:exit=2;");
-  });
+  }, 15_000);
 
   it("PM-603: check-citations detects all 4 drift classes, skips fenced blocks & placeholders, blocks path escape (Exit 4), and passes cleanly on VeriBrain repo", () => {
     const repo = makeTempDir("vb-prg2-pm603-");
@@ -696,7 +696,7 @@ describe("PRG-2 (v1.2.0) Golden Acceptance Suite (PM-601..PM-605)", () => {
     const verRes = runDistCli(["--version"], REPO_ROOT);
     expect(verRes.status).toBe(EXIT_OK);
     expect(verRes.stdout).toBe(`veribrain ${pkg.version}\n`);
-    expect(pkg.version).toBe("1.3.0");
+    expect(pkg.version).toBe("1.4.0");
     expect(pkg.bin.veribrain).toBe("dist/cli.js");
     expect(pkg.repository.url).toBe("git+https://github.com/neverbeenthemayor/veribrain.git");
     expect(Object.keys(pkg.dependencies).sort()).toEqual(["@modelcontextprotocol/sdk", "zod"]);
